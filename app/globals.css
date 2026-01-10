@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+/* ---------- DARK MODE AS DEFAULT ---------- */
+:root {
+  --mui-bg-default: #121212;
+  --mui-bg-paper: #1e1e1e;
+  --mui-text-primary: #ededed;
+  --mui-text-secondary: #b5b5b5;
+}
+
+/* ---------- LIGHT MODE ---------- */
+html.light {
+  --mui-bg-default: #f5f5f5;
+  --mui-bg-paper: #ffffff;
+  --mui-text-primary: #171717;
+  --mui-text-secondary: #555555;
+}
+
+html {
+  color-scheme: dark;
+  background-color: var(--mui-bg-default);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--mui-bg-default);
+  color: var(--mui-text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
