@@ -50,7 +50,6 @@ const MobileMenu = () => {
         color="inherit"
         aria-label="menu"
         onClick={handleOpenMobileMenu}
-        sx={{ mr: 2 }}
       >
         <HamburgerMenu />
       </IconButton>

@@ -16,12 +16,13 @@ import {
   DialogTitle,
   IconButton,
   Stack,
+  Tooltip,
 } from '@mui/material';
 import Link from 'next/link';
 import { getAllPosts } from '../../actions/fetchPost';
 import { deletePost } from '../../actions/deletePost';
 import { useAuth } from '../../contexts/AuthContext';
-import { Edit, Trash } from 'lucide-react';
+import { Edit, Trash, Plus } from 'lucide-react';
 
 interface PostData {
   title: string;
@@ -139,18 +140,36 @@ const PostsPage = () => {
   }
 
   return (
-    <Box sx={{ mt: 10 }}>
-      <Card>
+    <Box sx={{ mt: 10, display: 'flex', justifyContent: 'center' }}>
+      <Card sx={{ width: '90%', maxWidth: 1200, my: 4 }}>
         <CardHeader
           title="Manage Posts"
           action={
-            <Button variant="contained" component={Link} href="/new-post">
-              Create New Post
-            </Button>
+            <Tooltip title="Create New Post">
+              <IconButton
+                component={Link}
+                href="/new-post"
+                color="primary"
+                sx={{
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  borderRadius: 1,
+                  px: 2,
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
+                }}
+              >
+                <Plus size={20} />
+                <Typography variant="body2" sx={{ ml: 1 }}>
+                  New
+                </Typography>
+              </IconButton>
+            </Tooltip>
           }
         />
         <CardContent>
-          <Box sx={{ height: 400, width: '100%' }}>
+          <Box sx={{ height: 400, width: '100%', my: 2 }}>
             <DataGrid
               rows={postsData.map((post, index) => ({ ...post, id: index }))}
               columns={columns}
@@ -160,6 +179,8 @@ const PostsPage = () => {
                 },
               }}
               pageSizeOptions={[5, 10]}
+              density="compact"
+              disableRowSelectionOnClick
             />
           </Box>
         </CardContent>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
@@ -12,15 +12,17 @@ import Link from 'next/link';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@mui/material';
+import { useRouter } from 'next/navigation';
 
-interface UserProfileProps {
-    user: any;
-    isLoading?: boolean;
-}
-
-const UserProfileDropdown = ({ user, isLoading }: UserProfileProps) => {
-    const { signOut } = useAuth();
+const UserProfileDropdown = () => {
+    const { signOut, user, isLoading } = useAuth();
     const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
+    const [mounted, setMounted] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorElUser(event.currentTarget);
@@ -33,11 +35,18 @@ const UserProfileDropdown = ({ user, isLoading }: UserProfileProps) => {
     const handleSignOut = async () => {
         try {
             await signOut();
+            router.push('/login');
         } catch (error) {
             console.error('Error signing out:', error);
         }
         handleCloseUserMenu();
     };
+
+    // Prevent hydration mismatch by showing loading state until mounted
+    // Match the width of the user profile avatar to prevent layout shift
+    if (!mounted || isLoading) {
+        return <CircularProgress size={32} thickness={4} />
+    }
 
     if (!user) {
         return (
@@ -77,6 +86,7 @@ const UserProfileDropdown = ({ user, isLoading }: UserProfileProps) => {
                     }}
                     open={Boolean(anchorElUser)}
                     onClose={handleCloseUserMenu}
+                    disableScrollLock
                 >
                     <MenuItem onClick={handleCloseUserMenu} component={Link} href="/profile">
                         <Typography textAlign="center">Profile</Typography>

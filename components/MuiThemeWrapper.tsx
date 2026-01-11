@@ -1,5 +1,5 @@
 "use client"
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 
 const theme = createTheme({
@@ -61,9 +61,15 @@ const theme = createTheme({
 });
 
 export const MuiThemeWrapper = ({ children }: { children: React.ReactNode }) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
-      <CssBaseline />
+      {mounted && <CssBaseline />}
       {children}
     </ThemeProvider>
   );
