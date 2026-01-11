@@ -28,11 +28,12 @@ const HomePage = () => {
         maxWidth: 'lg'
       }}>
         <Typography 
-          variant="h2" 
+          variant="h4" 
           align="center" 
           gutterBottom
           sx={{ 
-            fontWeight: 700,
+            fontWeight: 600,
+            fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.5rem' },
             background: 'linear-gradient(45deg, #1976d2, #42a5f5)',
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
@@ -43,11 +44,11 @@ const HomePage = () => {
           Welcome to AxomShiksha CMS
         </Typography>
         <Typography 
-          variant="h5" 
+          variant="h6" 
           align="center" 
           color="textSecondary" 
           paragraph
-          sx={{ maxWidth: '600px', mx: 'auto', fontSize: { xs: '1.2rem', md: '1.3rem' } }}
+          sx={{ maxWidth: '600px', mx: 'auto', fontSize: { xs: '1rem', md: '1.1rem' } }}
         >
           Manage your posts with ease
         </Typography>

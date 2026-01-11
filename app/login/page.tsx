@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Paper, Typography, TextField, Button, Link, Alert, CircularProgress, Snackbar, Alert as MuiAlert } from '@mui/material';
+import { Box, Card, CardContent, Typography, TextField, Button, Link, Alert, CircularProgress, Snackbar, Alert as MuiAlert, InputAdornment } from '@mui/material';
+import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const LoginPage = () => {
@@ -53,65 +54,72 @@ const LoginPage = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '80vh',
+        minHeight: 'calc(100vh - 120px)',
+        pt: 8,
+        px: 2,
       }}
     >
-      <Paper elevation={3} sx={{ padding: 4, width: '100%', maxWidth: 400 }}>
-        <Typography variant="h4" component="h1" align="center" gutterBottom>
-          Sign In
-        </Typography>
-        
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+      <Card elevation={0} sx={{ width: '100%', maxWidth: 380, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>Welcome back</Typography>
+            <Typography variant="body2" color="text.secondary">Sign in to your account</Typography>
+          </Box>
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Email"
-            variant="outlined"
-            margin="normal"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          
-          <TextField
-            fullWidth
-            label="Password"
-            variant="outlined"
-            margin="normal"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            color="primary"
-            size="large"
-            disabled={loading}
-            sx={{ mt: 2 }}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Sign In'}
-          </Button>
-        </form>
-        
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Typography variant="body2">
-            Don't have an account?{' '}
-            <Link href="/signup" underline="hover">
-              Sign up here
-            </Link>
-          </Typography>
-        </Box>
-      </Paper>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              title='Enter your email'
+              label="Email"
+              variant="outlined"
+              margin="dense"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <TextField
+              fullWidth
+              title='Enter your password'
+              label="Password"
+              variant="outlined"
+              margin="dense"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              color="primary"
+              size="medium"
+              disabled={loading}
+              sx={{ mt: 2 }}
+            >
+              {loading ? <CircularProgress size={20} /> : 'Sign In'}
+            </Button>
+          </form>
+
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="body2">
+              Don't have an account?{' '}
+              <Link href="/signup" underline="hover">
+                Sign up here
+              </Link>
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={6000}

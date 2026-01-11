@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
-import MainLayout from "@/components/MainLayout";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "next-themes";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import { MuiThemeWrapper } from "@/components/MuiThemeWrapper";
 
 const montserrat = Montserrat({
   weight: "400",
@@ -15,9 +19,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html className={montserrat.className} lang="en">
+    <html className={montserrat.className} lang="en" suppressHydrationWarning>
       <body>
-        <MainLayout>{children}</MainLayout>
+        <AuthProvider>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+            <MuiThemeWrapper>
+              <Header />
+              {children}
+              <Footer />
+            </MuiThemeWrapper>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

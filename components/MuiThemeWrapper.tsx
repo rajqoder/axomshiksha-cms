@@ -1,20 +1,70 @@
-'use client';
-
+"use client"
 import React from 'react';
-import { ThemeProvider as MuiThemeProvider, CssBaseline, createTheme } from '@mui/material';
+import { CssBaseline, ThemeProvider, createTheme } from '@mui/material';
 
-// Create a simple dark theme as per the example
-const darkTheme = createTheme({
+const theme = createTheme({
   palette: {
     mode: 'dark',
+    background: {
+      default: '#0f0f10',
+      paper: '#1a1a1b'
+    },
+    primary: {
+      main: '#60a5fa'
+    },
+    secondary: {
+      main: '#f59e0b'
+    },
+    text: {
+      primary: '#e5e7eb',
+      secondary: '#9ca3af'
+    },
+    divider: 'rgba(255,255,255,0.08)'
+  },
+  components: {
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'transparent',
+          backdropFilter: 'saturate(180%) blur(8px)'
+        }
+      }
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none'
+        }
+      }
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#1a1a1b',
+          border: '1px solid rgba(255,255,255,0.08)'
+        }
+      }
+    },
+    MuiToolbar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'transparent'
+        }
+      }
+    },
+    MuiButton: {
+      defaultProps: {
+        variant: 'contained'
+      }
+    }
   },
 });
 
 export const MuiThemeWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <MuiThemeProvider theme={darkTheme} defaultMode='dark'>
-      <CssBaseline enableColorScheme/>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
       {children}
-    </MuiThemeProvider>
+    </ThemeProvider>
   );
 };

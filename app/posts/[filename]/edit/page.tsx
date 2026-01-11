@@ -40,20 +40,6 @@ interface FormData {
   keywords: string[];
 }
 
-interface FetchedData {
-  title: string;
-  slug: string;
-  description: string;
-  category: string | string[];
-  tags: string[];
-  content: string;
-  published: boolean;
-  readingTime: number | string;
-  thumbnail: string;
-  useTagsAsKeywords: boolean;
-  keywords: string[] | string;
-}
-
 const EditPostPage = () => {
   const { filename } = useParams();
   const [initialData, setInitialData] = useState<FormData | null>(null);

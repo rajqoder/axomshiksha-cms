@@ -1,109 +1,56 @@
-'use client';
-
-import React, { useState } from 'react';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Link from 'next/link';
-import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Avatar from '@mui/material/Avatar';
-import Tooltip from '@mui/material/Tooltip';
-import CircularProgress from '@mui/material/CircularProgress';
-import Image from 'next/image'; // Add Image import
-import { useAuth } from '@/contexts/AuthContext';
+import Image from 'next/image';
+import UserProfileDropdown from './UserProfileDropdown';
+import MobileMenu from './MobileMenu';
+import { Suspense } from 'react';
+import { CircularProgress } from '@mui/material';
+import { createClient } from '@/lib/supabase/server';
 
-const Header = () => {
-  const { user, signOut, isLoading } = useAuth();
-  const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
-
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget);
-  };
-
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null);
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-    handleCloseUserMenu();
-  };
+const Header = async () => {
 
   return (
-    <AppBar position="fixed" sx={{ bgcolor: 'background.default', zIndex: (theme) => theme.zIndex.drawer + 1 }}>
+    <AppBar position="fixed" sx={{ bgcolor: 'background.default', zIndex: 1201 }}>
       <Toolbar>
         <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
-          <Image 
-            src="/logo.png" 
+          <Image
+            src="/logo.png"
             alt="AxomShiksha Logo"
             width={40}
             height={40}
             style={{ borderRadius: '4px' }}
           />
         </Link>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 'auto' }}>
-          <Button color="primary" component={Link} href="/posts">
-            Posts
-          </Button>
-          <Button color="primary" component={Link} href="/new-post">
-            New Post
-          </Button>
-          
-          {isLoading ? (
+
+        {/* Desktop Navigation - Server rendered */}
+        <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 2, ml: 'auto' }}>
+          <Link href="/posts" style={{ textDecoration: 'none' }}>
+            <Typography variant="body1" sx={{ color: '#3b82f6', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}>
+              Posts
+            </Typography>
+          </Link>
+          <Link href="/new-post" style={{ textDecoration: 'none' }}>
+            <Typography variant="body1" sx={{ color: '#3b82f6', fontWeight: 600, '&:hover': { textDecoration: 'underline' } }}>
+              New Post
+            </Typography>
+          </Link>
+
+          <Suspense fallback={
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32 }}>
-              <CircularProgress size={24} thickness={4} />
-            </Box>
-          ) : user ? (
-            <Box sx={{ flexGrow: 0 }}>
-              <Tooltip title={user.user_metadata?.display_name || user.email || 'Profile'}>
-                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', color: 'white' }}>
-                    {(user.user_metadata?.display_name || user.email)?.charAt(0).toUpperCase()}
-                  </Avatar>
-                </IconButton>
-              </Tooltip>
-              <Menu
-                sx={{ mt: '45px' }}
-                id="menu-appbar"
-                anchorEl={anchorElUser}
-                anchorOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                keepMounted
-                transformOrigin={{
-                  vertical: 'top',
-                  horizontal: 'right',
-                }}
-                open={Boolean(anchorElUser)}
-                onClose={handleCloseUserMenu}
-              >
-                <MenuItem onClick={handleCloseUserMenu} component={Link} href="/profile">
-                  <Typography textAlign="center">Profile</Typography>
-                </MenuItem>
-                <MenuItem onClick={handleSignOut}>
-                  <Typography textAlign="center">Logout</Typography>
-                </MenuItem>
-              </Menu>
-            </Box>
-          ) : (
-            <>
-              <Button color="primary" component={Link} href="/login">
-                Login
-              </Button>
-              <Button color="primary" component={Link} href="/signup">
-                Sign Up
-              </Button>
-            </>
-          )}
+            <CircularProgress size={24} thickness={4} />
+          </Box>
+        }>
+            <UserProfileDropdownWrapper />
+          </Suspense>
+        </Box>
+
+        {/* Mobile Navigation - Client Component */}
+        <Box sx={{ display: { xs: 'block', md: 'none' }, ml: 'auto' }}>
+          <MobileMenu />
         </Box>
       </Toolbar>
     </AppBar>
@@ -111,3 +58,13 @@ const Header = () => {
 };
 
 export default Header;
+
+const UserProfileDropdownWrapper = async () => {
+  const supabase = await createClient();
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  return <UserProfileDropdown user={session?.user} isLoading={!session && session !== undefined} />;
+}

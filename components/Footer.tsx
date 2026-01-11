@@ -1,9 +1,9 @@
-'use client';
-
 import React from 'react';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+
+const BUILD_YEAR = new Date().getFullYear();
 
 const Footer = () => {
   return (
@@ -20,7 +20,7 @@ const Footer = () => {
     >
       <Container maxWidth="lg">
         <Typography variant="body1" align="center">
-          © {new Date().getFullYear()} AxomShiksha CMS. All rights reserved.
+          © {BUILD_YEAR} AxomShiksha CMS. All rights reserved.
         </Typography>
         <Typography variant="body2" align="center" color="text.secondary" sx={{ opacity: 0.7, fontStyle: 'italic' }}>
           Made for axomshiksha.com

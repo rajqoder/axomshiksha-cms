@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Paper, Typography, TextField, Button, Link, Alert, CircularProgress, Snackbar, Alert as MuiAlert } from '@mui/material';
+import { Box, Card, CardContent, Typography, TextField, Button, Link, Alert, CircularProgress, Snackbar, Alert as MuiAlert, InputAdornment } from '@mui/material';
+import { User, Mail, Lock } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const SignupPage = () => {
@@ -65,102 +66,111 @@ const SignupPage = () => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: '80vh',
+        minHeight: 'calc(100vh - 120px)',
+        pt: 8,
+        px: 2,
       }}
     >
-      <Paper elevation={3} sx={{ padding: 4, width: '100%', maxWidth: 400 }}>
-        <Typography variant="h4" component="h1" align="center" gutterBottom>
-          Sign Up
-        </Typography>
-        
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+      <Card elevation={0} sx={{ width: '100%', maxWidth: 380, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Box sx={{ textAlign: 'center', mb: 2 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>Create account</Typography>
+            <Typography variant="body2" color="text.secondary">Sign up to get started</Typography>
+          </Box>
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Display Name"
-            variant="outlined"
-            margin="normal"
-            type="text"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            required
-          />
-          
-          <TextField
-            fullWidth
-            label="Email"
-            variant="outlined"
-            margin="normal"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          
-          <TextField
-            fullWidth
-            label="Password"
-            variant="outlined"
-            margin="normal"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          
-          <TextField
-            fullWidth
-            label="Confirm Password"
-            variant="outlined"
-            margin="normal"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-          />
-          
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            color="primary"
-            size="large"
-            disabled={loading}
-            sx={{ mt: 2 }}
-          >
-            {loading ? <CircularProgress size={24} /> : 'Sign Up'}
-          </Button>
-        </form>
-        
-        <Snackbar
-          open={snackbarOpen}
-          autoHideDuration={6000}
-          onClose={() => setSnackbarOpen(false)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        >
-          <MuiAlert
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <form onSubmit={handleSubmit}>
+            <TextField
+              fullWidth
+              title='Enter your name'
+              label="Display Name"
+              variant="outlined"
+              margin="dense"
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              required
+            />
+
+            <TextField
+              fullWidth
+              title='Enter your email'
+              label="Email"
+              variant="outlined"
+              margin="dense"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+
+            <TextField
+              fullWidth
+              title='Enter your password'
+              label="Password"
+              variant="outlined"
+              margin="dense"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <TextField
+              fullWidth
+              title='Confirm your password'
+              label="Confirm Password"
+              variant="outlined"
+              margin="dense"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              color="primary"
+              size="medium"
+              disabled={loading}
+              sx={{ mt: 2 }}
+            >
+              {loading ? <CircularProgress size={20} /> : 'Sign Up'}
+            </Button>
+          </form>
+
+          <Snackbar
+            open={snackbarOpen}
+            autoHideDuration={6000}
             onClose={() => setSnackbarOpen(false)}
-            severity={snackbarSeverity}
-            sx={{ width: '100%' }}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           >
-            {snackbarMessage}
-          </MuiAlert>
-        </Snackbar>
-        
-        <Box sx={{ mt: 2, textAlign: 'center' }}>
-          <Typography variant="body2">
-            Already have an account?{' '}
-            <Link href="/login" underline="hover">
-              Sign in here
-            </Link>
-          </Typography>
-        </Box>
-      </Paper>
+            <MuiAlert
+              onClose={() => setSnackbarOpen(false)}
+              severity={snackbarSeverity}
+              sx={{ width: '100%' }}
+            >
+              {snackbarMessage}
+            </MuiAlert>
+          </Snackbar>
+
+          <Box sx={{ mt: 2, textAlign: 'center' }}>
+            <Typography variant="body2">
+              Already have an account?{' '}
+              <Link href="/login" underline="hover">
+                Sign in here
+              </Link>
+            </Typography>
+          </Box>
+        </CardContent>
+      </Card>
     </Box>
   );
 };
