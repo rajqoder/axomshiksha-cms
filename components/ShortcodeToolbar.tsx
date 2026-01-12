@@ -1170,7 +1170,12 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
       ? processInnerContent(innerContent || '\n  Your content here\n')
       : (innerContent || '\n  Your content here\n');
 
-    const shortcode = `{{< flex${params.length > 0 ? ' ' + params.join(' ') : ''} >}}${processedContent}{{< /flex >}}`;
+      const content = processedContent
+      ? `\n${processedContent.trim()}\n`
+      : `\n  Your content here\n`;
+    
+    const shortcode = `{{< flex${params.length > 0 ? ' ' + params.join(' ') : ''} >}}${content}{{< /flex >}}`;
+    
     onInsert(shortcode);
     onClose();
     handleReset();
@@ -1636,7 +1641,12 @@ const TableFlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInse
     if (marginY !== '0') params.push(`marginY="${marginY}"`);
     if (marginX !== '0') params.push(`marginX="${marginX}"`);
 
-    const shortcode = `{{< table-flex${params.length > 0 ? ' ' + params.join(' ') : ''} >}}${innerContent || '\n  Your content here\n'}{{< /table-flex >}}`;
+    const content = innerContent
+  ? `\n\n${innerContent.trim()}\n\n`
+  : `\n\n Your content here\n\n`;
+
+  const shortcode = `{{< table-flex${params.length > 0 ? ' ' + params.join(' ') : ''} >}}${content}{{< /table-flex >}}`;
+
     onInsert(shortcode);
     onClose();
     handleReset();
