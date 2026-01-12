@@ -220,608 +220,98 @@ const parseAndRenderShortcodes = (content: string): React.ReactNode => {
 
 // Helper function to parse and render markdown tables, handling tables without headers
 const renderMarkdownTables = (markdown: string) => {
-  if (!markdown || markdown.trim() === '') {
-    // Default preview: 3 sample tables (one without header)
-    const defaultTables = `| Header 1 | Header 2 | Header 3 |
-|----------|---------|---------|
-| Cell 1   | Cell 2  | Cell 3  |
-| Cell 4   | Cell 5  | Cell 6  |
+  if (!markdown || markdown.trim() === '') return null;
 
-|     |     |
-|-----|-----|
-| A   | B   |
-| C   | D   |
+  const isRow = (l: string) => /^\|.*\|$/.test(l.trim());
+  const isSeparator = (l: string) => /^\|[\s\-:|]+\|$/.test(l.trim());
 
-| Col 1 | Col 2 |
-|-------|-------|
-| Data 1| Data 2|`;
-    return <ReactMarkdown remarkPlugins={[remarkGfm]}>{defaultTables}</ReactMarkdown>;
-  }
-  
-  // Process markdown to handle tables without headers and fix formatting
-  const processMarkdown = (md: string): { markdown: string; headinglessTables: Set<number> } => {
-    const lines = md.split('\n');
-    const processed: string[] = [];
-    const headinglessTables = new Set<number>();
-    let i = 0;
-    let tableIndex = 0;
-    let inTable = false;
-    let tableStartIndex = -1;
-    
-    while (i < lines.length) {
-      const line = lines[i];
-      const trimmedLine = line.trim();
-      
-      // Check if this is a separator line
-      const isSeparator = trimmedLine.match(/^\|[\s\-\|:]+\|$/);
-      // Check if this is a table row
-      const isTableRow = trimmedLine.match(/^\|.*\|$/);
-      
-      if (isSeparator) {
-        // Check previous line - if it's not a table row or is empty, this table has no header
-        const prevLine = i > 0 ? lines[i - 1].trim() : '';
-        // Check if previous line is a table row (has pipes at start and end, even if cells are empty)
-        const isPrevTableRow = prevLine.match(/^\|.*\|$/);
-        
-        // If we were in a table and this is a new separator, we need to close the previous table
-        if (inTable && tableStartIndex >= 0 && tableStartIndex !== tableIndex) {
-          // Add multiple blank lines to ensure tables don't merge
-          processed.push('');
-          processed.push('');
-        }
-        
-        // Mark this as the start of a new table
-        if (!inTable) {
-          tableStartIndex = tableIndex;
-          inTable = true;
-        }
-        
-        // Check if previous line is empty or not a table row
-        // Only treat as headingless if there's truly no header row (empty line or non-table line before separator)
-        if (prevLine === '' || !isPrevTableRow) {
-          // No header row - we need to add a dummy header row before the separator
-          // Count columns from the separator
-          const columnCount = (trimmedLine.match(/\|/g) || []).length - 1;
-          if (columnCount > 0) {
-            // Create a dummy header row with empty cells
-            const dummyHeader = '|' + ' |'.repeat(columnCount);
-            processed.push(dummyHeader);
-            headinglessTables.add(tableIndex);
-          }
-        } else {
-          // There IS a header row - check if it's an empty header row
-          const cells = prevLine.split('|').slice(1, -1);
-          const allEmpty = cells.length === 0 || cells.every(cell => cell.trim() === '');
-          if (allEmpty) {
-            // Empty header row - treat as headingless
-            headinglessTables.add(tableIndex);
-            // Remove the empty header row from processed output if it was added
-            // Find and remove it (it should be the last table row we added)
-            for (let j = processed.length - 1; j >= 0; j--) {
-              if (processed[j].trim() === prevLine) {
-                processed.splice(j, 1);
-                break;
-              }
-            }
-            // Add a dummy header row instead (will be hidden later)
-            const columnCount = (trimmedLine.match(/\|/g) || []).length - 1;
-            if (columnCount > 0) {
-              const dummyHeader = '|' + ' |'.repeat(columnCount);
-              processed.push(dummyHeader);
-            }
-          }
-          // If it's a valid header row, it should already be in processed from the previous iteration
-        }
-        // Always include the separator line
-        processed.push(line);
-        tableIndex++;
-      } else if (isTableRow) {
-        // Regular table row - check if it's an empty header row followed by a separator
-        const cells = trimmedLine.split('|').slice(1, -1);
-        const allEmpty = cells.length === 0 || cells.every(cell => cell.trim() === '');
-        
-        // Check if next line is a separator
-        const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
-        const isNextSeparator = nextLine.match(/^\|[\s\-\|:]+\|$/);
-        
-        if (allEmpty && isNextSeparator) {
-          // This is an empty header row followed by a separator - skip it
-          // It will be replaced with a dummy header when we process the separator
-          if (!inTable) {
-            tableStartIndex = tableIndex;
-            inTable = true;
-          }
-          // Don't add this line - it will be replaced
-        } else {
-          // Regular table row - include it
-          if (!inTable) {
-            tableStartIndex = tableIndex;
-            inTable = true;
-          }
-          processed.push(line);
-        }
-      } else {
-        // Non-table line
-        // If we have consecutive empty lines after a table, it might indicate table end
-        if (inTable && trimmedLine === '') {
-          // Check if next non-empty line is not a table row
-          let nextNonEmpty = i + 1;
-          while (nextNonEmpty < lines.length && lines[nextNonEmpty].trim() === '') {
-            nextNonEmpty++;
-          }
-          if (nextNonEmpty < lines.length) {
-            const nextLine = lines[nextNonEmpty].trim();
-            const isNextTableRow = nextLine.match(/^\|.*\|$/);
-            const isNextSeparator = nextLine.match(/^\|[\s\-\|:]+\|$/);
-            // If next non-empty line is a table row or separator, we're starting a new table
-            if (isNextTableRow || isNextSeparator) {
-              // Add multiple blank lines to ensure tables don't merge
-              processed.push('');
-              processed.push('');
-              inTable = false;
-            }
-          }
-        } else if (trimmedLine !== '' && inTable) {
-          // Non-empty, non-table line - table has ended
-          inTable = false;
-        }
-        // Regular line - include it
-        processed.push(line);
-      }
-      
-      i++;
-    }
-    
-    return { markdown: processed.join('\n'), headinglessTables };
+  const isEmptyHeaderRow = (row: string) => {
+    const cells = row.split('|').slice(1, -1);
+    return cells.every(c => c.trim() === '');
   };
-  
-  // Parse table alignment from separator lines and create custom CSS
-  const parseTableAlignment = (md: string): { [tableIndex: number]: string[] } => {
-    const lines = md.split('\n');
-    const alignments: { [tableIndex: number]: string[] } = {};
-    let tableIndex = 0;
-    let i = 0;
-    
-    while (i < lines.length) {
-      const line = lines[i].trim();
-      const isSeparator = line.match(/^\|[\s\-\|:]+\|$/);
-      
-      if (isSeparator) {
-        // Parse alignment from separator
-        const cells = line.split('|').filter(c => c.trim() !== '');
-        const cellAlignments: string[] = [];
-        
-        cells.forEach(cell => {
-          const trimmed = cell.trim();
-          if (trimmed.startsWith(':') && trimmed.endsWith(':')) {
-            // Center: :---:
-            cellAlignments.push('center');
-          } else if (trimmed.endsWith(':')) {
-            // Right: ---:
-            cellAlignments.push('right');
-          } else if (trimmed.startsWith(':')) {
-            // Left: :---
-            cellAlignments.push('left');
-          } else {
-            // Default: left (---)
-            cellAlignments.push('left');
-          }
-        });
-        
-        alignments[tableIndex] = cellAlignments;
-        tableIndex++;
+
+  const lines = markdown.split('\n');
+  const blocks: { block: string; headingless: boolean }[] = [];
+
+  let buffer: string[] = [];
+  let inTable = false;
+
+  const flush = () => {
+    if (!buffer.length) return;
+
+    let headingless = false;
+    let result: string[] = [];
+
+    for (let i = 0; i < buffer.length; i++) {
+      // Detect empty header row followed by separator
+      if (
+        i < buffer.length - 1 &&
+        isRow(buffer[i]) &&
+        isSeparator(buffer[i + 1]) &&
+        isEmptyHeaderRow(buffer[i])
+      ) {
+        headingless = true;
+        // Keep the header row (required), but mark table as headingless
       }
-      
-      i++;
+      result.push(buffer[i]);
     }
-    
-    return alignments;
-  };
-  
-  const { markdown: processedMarkdown, headinglessTables } = processMarkdown(markdown);
-  const tableAlignments = parseTableAlignment(processedMarkdown);
-  
-  // Split markdown into table blocks - each table should be a separate block
-  const splitIntoTableBlocks = (md: string, headinglessSet: Set<number>): { block: string; headingless: boolean }[] => {
-    if (!md || md.trim() === '') return [];
-    
-    const lines = md.split('\n');
-    const blocks: { block: string; headingless: boolean }[] = [];
-    let currentBlock: string[] = [];
-    let inTable = false;
-    let currentTableIndex = -1; // Track which table index the current block corresponds to
-    let separatorCount = 0; // Track total separators seen (matches processMarkdown's tableIndex)
-    
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const trimmed = line.trim();
-      const isTableRow = trimmed.match(/^\|.*\|$/);
-      const isSeparator = trimmed.match(/^\|[\s\-\|:]+\|$/);
-      
-      if (isTableRow || isSeparator) {
-        // Check if this is an empty header row (only spaces between pipes)
-        if (isTableRow && !isSeparator) {
-          const cells = trimmed.split('|').slice(1, -1);
-          const allEmpty = cells.length === 0 || cells.every(cell => cell.trim() === '');
-          
-          // Check if next line is a separator - if so, this is an empty header row
-          const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
-          const isNextSeparator = nextLine.match(/^\|[\s\-\|:]+\|$/);
-          
-          if (allEmpty && isNextSeparator) {
-            // This is an empty header row - skip it completely
-            continue;
-          }
-        }
-        
-        // We're in a table
-        if (!inTable && currentBlock.length > 0) {
-          // Save previous non-table block
-          blocks.push({ block: currentBlock.join('\n'), headingless: false });
-          currentBlock = [];
-        }
-        inTable = true;
-        currentBlock.push(line);
-        
-        // If this is a separator, this corresponds to a table index in processMarkdown
-        // In processMarkdown, tableIndex is used when processing separator, then incremented
-        // So separatorCount here tracks the same: increment AFTER using it
-        if (isSeparator) {
-          // This separator corresponds to the current separatorCount index
-          currentTableIndex = separatorCount;
-          separatorCount++; // Increment for next separator
-        }
-      } else {
-        // Not a table row
-        if (inTable) {
-          // We were in a table, now we're not - save the table block
-          if (currentBlock.length > 0) {
-            const blockContent = currentBlock.join('\n');
-            const isTableBlock = blockContent.match(/^\|.*\|$/m);
-            if (isTableBlock) {
-              // This is a table block - use the table index we tracked
-              blocks.push({
-                block: blockContent,
-                headingless: headinglessSet.has(currentTableIndex),
-              });
-            } else {
-              blocks.push({ block: blockContent, headingless: false });
-            }
-            currentBlock = [];
-          }
-          inTable = false;
-          currentTableIndex = -1; // Reset for next table (will be set when we see its separator)
-        }
-        // Skip empty lines between tables
-        if (trimmed !== '') {
-          // Non-empty non-table line - start a new block
-          if (currentBlock.length > 0) {
-            blocks.push({ block: currentBlock.join('\n'), headingless: false });
-            currentBlock = [];
-          }
-          currentBlock.push(line);
-        }
-      }
-    }
-    
-    // Add remaining block
-    if (currentBlock.length > 0) {
-      const blockContent = currentBlock.join('\n');
-      const isTableBlock = blockContent.match(/^\|.*\|$/m);
-      if (isTableBlock && inTable) {
-        // For the last table, use the tracked table index
-        blocks.push({
-          block: blockContent,
-          headingless: headinglessSet.has(currentTableIndex),
-        });
-      } else {
-        blocks.push({ block: blockContent, headingless: false });
-      }
-    }
-    
-    // Filter out empty blocks and blocks that are just empty header rows
-    return blocks.filter(item => {
-      const trimmed = item.block.trim();
-      if (trimmed === '') return false;
-      
-      // Check if block is just an empty header row (like | | | |)
-      const lines = trimmed.split('\n');
-      if (lines.length === 1) {
-        const line = lines[0].trim();
-        if (line.match(/^\|.*\|$/)) {
-          const cells = line.split('|').slice(1, -1);
-          const allEmpty = cells.length === 0 || cells.every(cell => cell.trim() === '');
-          if (allEmpty) {
-            // This is just an empty header row - filter it out
-            return false;
-          }
-        }
-      }
-      
-      return true;
+
+    blocks.push({
+      block: result.join('\n'),
+      headingless,
     });
+
+    buffer = [];
   };
-  
-  const tableBlocks = splitIntoTableBlocks(processedMarkdown, headinglessTables);
-  
-  // Create a component that uses ref to apply alignment after render
-  const TableRenderer: React.FC<{ markdown: string; alignments: { [key: number]: string[] }; tableBlocks: { block: string; headingless: boolean }[] }> = ({ markdown, alignments, tableBlocks }) => {
-    const containerRefs = React.useRef<(HTMLDivElement | null)[]>([]);
-    
-    React.useEffect(() => {
-      const hideHeaderRows = () => {
-        // Process all container refs - each container corresponds to one block
-        containerRefs.current.forEach((containerRef, blockIndex) => {
-          if (!containerRef) return;
-          
-          const tables = containerRef.querySelectorAll('table');
-          
-          // Each block should have exactly one table
-          tables.forEach((table) => {
-            // Use block metadata instead of global index
-            const isHeadingless = blockIndex < tableBlocks.length && tableBlocks[blockIndex].headingless;
-            
-            if (isHeadingless) {
-              // Mark the table with a data attribute for CSS targeting
-              (table as HTMLElement).setAttribute('data-headingless', 'true');
-              
-              // Try to hide the entire thead if it exists
-              const thead = table.querySelector('thead');
-              if (thead) {
-                (thead as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important; font-size: 0 !important;';
-                // Also hide all children
-                const theadChildren = thead.querySelectorAll('*');
-                theadChildren.forEach((child) => {
-                  (child as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important;';
-                });
-              }
-              
-              // Also check for header rows in tbody (ReactMarkdown sometimes puts headers there)
-              const tbody = table.querySelector('tbody');
-              if (tbody) {
-                const firstRow = tbody.querySelector('tr:first-of-type');
-                if (firstRow) {
-                  // Check if this row contains th elements (it's a header row)
-                  const hasTh = firstRow.querySelector('th');
-                  if (hasTh) {
-                    (firstRow as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important;';
-                    // Also hide all th elements in this row
-                    const thElements = firstRow.querySelectorAll('th');
-                    thElements.forEach((th) => {
-                      (th as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important; font-size: 0 !important;';
-                    });
-                  }
-                }
-              }
-              
-              // Fallback: check all rows and hide ONLY the first header row (with th elements, no td)
-              // This ensures we don't accidentally hide headers from other tables
-              const allRows = table.querySelectorAll('tr');
-              let foundHeaderRow = false;
-              
-              for (let j = 0; j < allRows.length; j++) {
-                const row = allRows[j];
-                // Skip if already hidden
-                if ((row as HTMLElement).style.display === 'none') continue;
-                
-                const hasTh = row.querySelector('th');
-                const hasTd = row.querySelector('td');
-                
-                // If it has th elements and no td elements, it's a header row - hide it completely
-                // But only if we haven't found a header row yet (first header row only)
-                if (hasTh && !hasTd && !foundHeaderRow) {
-                  (row as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important;';
-                  // Hide all th elements in this row
-                  const thElements = row.querySelectorAll('th');
-                  thElements.forEach((th) => {
-                    (th as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important; font-size: 0 !important;';
-                  });
-                  foundHeaderRow = true;
-                  break; // Only hide the first header row
-                }
-                
-                // If we find a data row (has td), stop looking (we've passed the header)
-                if (hasTd) break;
-              }
-            } else {
-              // For non-headingless tables, ensure header is visible
-              (table as HTMLElement).removeAttribute('data-headingless');
-            }
-            
-            // Apply alignment styles - need to map blockIndex to table index for alignments
-            // Since alignments uses separator-based indexing, we need to find which separator this block corresponds to
-            // For now, use blockIndex as a fallback (this might need adjustment if non-table blocks are mixed in)
-            const alignmentIndex = blockIndex; // This assumes table blocks are in order
-            if (alignments[alignmentIndex]) {
-              const cellAlignments = alignments[alignmentIndex];
-              const rows = table.querySelectorAll('tr');
-              
-              rows.forEach((row) => {
-                // Skip hidden rows
-                if ((row as HTMLElement).style.display === 'none') return;
-                
-                const cells = row.querySelectorAll('th, td');
-                cells.forEach((cell, colIndex) => {
-                  if (cellAlignments[colIndex]) {
-                    (cell as HTMLElement).style.textAlign = cellAlignments[colIndex];
-                  } else {
-                    (cell as HTMLElement).style.textAlign = 'left';
-                  }
-                });
-              });
-            } else {
-              // Default: all cells left-aligned
-              const rows = table.querySelectorAll('tr');
-              rows.forEach((row) => {
-                // Skip hidden rows
-                if ((row as HTMLElement).style.display === 'none') return;
-                
-                const cells = row.querySelectorAll('th, td');
-                cells.forEach((cell) => {
-                  (cell as HTMLElement).style.textAlign = 'left';
-                });
-              });
-            }
-          });
-        });
-      };
-      
-      // Also ensure non-headingless tables have their headers visible
-      const ensureNonHeadinglessHeadersVisible = () => {
-        containerRefs.current.forEach((containerRef, blockIndex) => {
-          if (!containerRef) return;
-          
-          const tables = containerRef.querySelectorAll('table');
-          tables.forEach((table) => {
-            // Use block metadata instead of global index
-            const isHeadingless = blockIndex < tableBlocks.length && tableBlocks[blockIndex].headingless;
-            
-            // If this table is NOT headingless, ensure its header is visible
-            if (!isHeadingless) {
-              const thead = table.querySelector('thead');
-              if (thead) {
-                (thead as HTMLElement).style.cssText = '';
-                const theadChildren = thead.querySelectorAll('*');
-                theadChildren.forEach((child) => {
-                  (child as HTMLElement).style.cssText = '';
-                });
-              }
-              // Also ensure first row in tbody with th is visible
-              const tbody = table.querySelector('tbody');
-              if (tbody) {
-                const firstRow = tbody.querySelector('tr:first-of-type');
-                if (firstRow) {
-                  const hasTh = firstRow.querySelector('th');
-                  if (hasTh) {
-                    (firstRow as HTMLElement).style.cssText = '';
-                    const thElements = firstRow.querySelectorAll('th');
-                    thElements.forEach((th) => {
-                      (th as HTMLElement).style.cssText = '';
-                    });
-                  }
-                }
-              }
-            }
-          });
-        });
-      };
-      
-      ensureNonHeadinglessHeadersVisible();
-      
-      // Run immediately
-      hideHeaderRows();
-      
-      // Also use MutationObserver to catch when ReactMarkdown finishes rendering
-      const observers: MutationObserver[] = [];
-      const timeouts: NodeJS.Timeout[] = [];
-      
-      containerRefs.current.forEach((containerRef) => {
-        if (containerRef) {
-          const observer = new MutationObserver(() => {
-            hideHeaderRows();
-          });
-          
-          observer.observe(containerRef, {
-            childList: true,
-            subtree: true,
-          });
-          
-          observers.push(observer);
-          
-          // Also run after a short delay to catch any late renders
-          const timeoutId = setTimeout(() => {
-            hideHeaderRows();
-          }, 100);
-          
-          timeouts.push(timeoutId);
-        }
-      });
-      
-      return () => {
-        observers.forEach(observer => observer.disconnect());
-        timeouts.forEach(timeout => clearTimeout(timeout));
-      };
-    }, [markdown, alignments, tableBlocks]);
-    
-    // Render each table block separately so they become direct flex children
-    return (
-      <>
-        {tableBlocks.map((blockItem, blockIndex) => {
-          const trimmedBlock = blockItem.block.trim();
-          
-          // Filter out blocks that are just empty header rows (like | | | |)
-          if (trimmedBlock.match(/^\|[\s\|]+\|$/m) && !trimmedBlock.match(/^\|[\s\-\|:]+\|$/m)) {
-            // This block is just an empty header row - skip it
-            return null;
-          }
-          
-          const isTableBlock = trimmedBlock.match(/^\|.*\|$/m); // Check if block contains table rows
-          
-          if (isTableBlock) {
-            // This is a table block - render it as a direct flex child
-            return (
-              <Box
-                key={blockIndex}
-                ref={(el: HTMLDivElement | null) => {
-                  containerRefs.current[blockIndex] = el;
-                }}
-                sx={{
-                  alignSelf: 'flex-start',
-                  width: '100%',
-                  '& table': {
-                    borderCollapse: 'collapse',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    width: '100%',
-                  },
-                  '& table th, & table td': {
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    padding: '8px',
-                    textAlign: 'left',
-                  },
-                  '& table th': {
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    fontWeight: 600,
-                  },
-                  '& table[data-headingless="true"] thead': {
-                    display: 'none !important',
-                    visibility: 'hidden !important',
-                    height: '0 !important',
-                    padding: '0 !important',
-                    margin: '0 !important',
-                    border: 'none !important',
-                    lineHeight: '0 !important',
-                  },
-                  '& table[data-headingless="true"] thead tr': {
-                    display: 'none !important',
-                    visibility: 'hidden !important',
-                    height: '0 !important',
-                    lineHeight: '0 !important',
-                  },
-                  '& table[data-headingless="true"] thead th': {
-                    display: 'none !important',
-                    visibility: 'hidden !important',
-                    height: '0 !important',
-                    padding: '0 !important',
-                    border: 'none !important',
-                    lineHeight: '0 !important',
-                    fontSize: '0 !important',
-                  },
-                }}
-              >
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                  {blockItem.block}
-                </ReactMarkdown>
-              </Box>
-            );
-          }
-          return null; // Skip non-table blocks for now
-        })}
-      </>
-    );
-  };
-  
-  return <TableRenderer markdown={processedMarkdown} alignments={tableAlignments} tableBlocks={tableBlocks} />;
+
+  for (const line of lines) {
+    if (isRow(line) || isSeparator(line)) {
+      inTable = true;
+      buffer.push(line);
+    } else {
+      if (inTable) {
+        flush();
+        inTable = false;
+      }
+    }
+  }
+
+  if (inTable) flush();
+
+  return (
+    <>
+      {blocks.map((item, idx) => (
+        <Box
+          key={idx}
+          sx={{
+            width: '100%',
+            alignSelf: 'flex-start',
+            '& table': {
+              width: '100%',
+              borderCollapse: 'collapse',
+            },
+            '& th, & td': {
+              border: '1px solid rgba(255,255,255,0.2)',
+              padding: '8px',
+              textAlign: 'left',
+            },
+            ...(item.headingless && {
+              '& thead': {
+                display: 'none',
+              },
+            }),
+          }}
+        >
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {item.block}
+          </ReactMarkdown>
+        </Box>
+      ))}
+    </>
+  );
 };
+
+
 
 // Helper function to convert color name to hex (for backward compatibility)
 const colorNameToHex = (colorName: string): string => {
