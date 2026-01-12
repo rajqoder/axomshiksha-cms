@@ -24,7 +24,8 @@ import {
 import TagSelector from '@/components/TagSelector';
 import KeywordsInput from '@/components/KeywordsInput';
 import { CATEGORIES, CATEGORY_MAP } from '../CONSTANT';
-import MarkdownEditor from '@/components/MarkdownEditor';
+import MarkdownEditor, { MarkdownEditorRef } from '@/components/MarkdownEditor';
+import ShortcodeToolbar from '@/components/ShortcodeToolbar';
 import { FileText, Save, Send, Info, BookOpen } from 'lucide-react';
 
 interface FormData {
@@ -73,6 +74,7 @@ const NewPostPage = () => {
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
   const [snackbarMessage, setSnackbarMessage] = React.useState('');
   const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success');
+  const markdownEditorRef = React.useRef<MarkdownEditorRef>(null);
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -202,6 +204,13 @@ const NewPostPage = () => {
                 flexDirection: 'column',
                 minHeight: '600px'
               }}>
+                <ShortcodeToolbar
+                  onInsert={(shortcode) => {
+                    if (markdownEditorRef.current) {
+                      markdownEditorRef.current.insertText(shortcode);
+                    }
+                  }}
+                />
                 <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 0 }}>
                   <Controller
                     name="content"
@@ -210,6 +219,7 @@ const NewPostPage = () => {
                     render={({ field }) => (
                       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <MarkdownEditor
+                          ref={markdownEditorRef}
                           value={field.value}
                           onChange={field.onChange}
                         />

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Box } from '@mui/material';
 
@@ -17,7 +17,35 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void;
 }
 
-const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange }) => {
+export interface MarkdownEditorRef {
+  insertText: (text: string) => void;
+}
+
+const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ value, onChange }, ref) => {
+  useImperativeHandle(ref, () => ({
+    insertText: (text: string) => {
+      // Try to find the textarea element
+      const textarea = document.querySelector('.w-md-editor-text-textarea') as HTMLTextAreaElement;
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const textBefore = value.substring(0, start);
+        const textAfter = value.substring(end);
+        const newValue = textBefore + text + textAfter;
+        onChange(newValue);
+        
+        // Set cursor position after inserted text
+        setTimeout(() => {
+          textarea.focus();
+          const newCursorPos = start + text.length;
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+        }, 0);
+      } else {
+        // Fallback: append to end
+        onChange(value + '\n' + text);
+      }
+    },
+  }));
   useEffect(() => {
     // Function to fix empty src images
     const fixEmptySrcImages = () => {
@@ -359,6 +387,8 @@ const MarkdownEditor: React.FC<MarkdownEditorProps> = ({ value, onChange }) => {
       />
     </Box>
   );
-};
+});
+
+MarkdownEditor.displayName = 'MarkdownEditor';
 
 export default MarkdownEditor;
