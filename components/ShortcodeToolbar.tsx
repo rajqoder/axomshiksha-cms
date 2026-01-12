@@ -29,9 +29,194 @@ import {
   Box as BoxIcon,
   X,
   Eye,
+  HelpCircle,
+  Maximize2,
+  Minimize2,
+  RotateCcw,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+// Helper function to parse shortcode syntax and render preview components
+const parseAndRenderShortcodes = (content: string): React.ReactNode => {
+  if (!content || content.trim() === '') return null;
+
+  // Parse shortcode patterns: {{< shortcode-name params >}} or {{< shortcode-name >}}
+  // Note: shortcode names can contain hyphens (e.g., content-box, empty-box, underscored-space)
+  const shortcodePattern = /\{\{<\s*([\w-]+)([^>]*?)\s*>\}\}/g;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+  const matches: RegExpExecArray[] = [];
+  
+  // Collect all matches first
+  while ((match = shortcodePattern.exec(content)) !== null) {
+    matches.push(match);
+  }
+
+  matches.forEach((match, idx) => {
+    // Add text before the shortcode
+    if (match.index > lastIndex) {
+      const textBefore = content.substring(lastIndex, match.index);
+      // Only add non-whitespace text
+      const trimmed = textBefore.trim();
+      if (trimmed) {
+        parts.push(<span key={`text-${lastIndex}`}>{trimmed}</span>);
+      }
+    }
+
+    const shortcodeName = match[1];
+    const paramsString = match[2] || '';
+    
+    // Parse parameters
+    const params: { [key: string]: string } = {};
+    const paramPattern = /(\w+)="([^"]*)"/g;
+    let paramMatch;
+    while ((paramMatch = paramPattern.exec(paramsString)) !== null) {
+      params[paramMatch[1]] = paramMatch[2];
+    }
+
+    // Render the appropriate shortcode preview
+    switch (shortcodeName) {
+      case 'line':
+        parts.push(
+          <span
+            key={`shortcode-${match.index}`}
+            className="inline-block border-b max-w-full"
+            style={{
+              borderColor: params.color || '#6b7280',
+              width: params.width || '100%',
+              height: params.height || '1px',
+              marginTop: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+              marginBottom: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+              marginLeft: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+              marginRight: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+              flex: params.flex || undefined,
+            }}
+          />
+        );
+        break;
+      
+      case 'empty-box':
+        parts.push(
+          <div
+            key={`shortcode-${match.index}`}
+            className="inline-flex border rounded-sm"
+            style={{
+              width: params.width || '5.5rem',
+              height: params.height || '2.5rem',
+              borderColor: params.borderColor || '#3b82f6',
+              marginTop: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+              marginBottom: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+              marginLeft: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+              marginRight: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+              flex: params.flex || undefined,
+            }}
+          />
+        );
+        break;
+      
+      case 'content-box':
+        if (params.type === 'heading') {
+          parts.push(
+            <div key={`shortcode-${match.index}`} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: params.flex || undefined }}>
+              <div
+                style={{
+                  display: 'flex',
+                  paddingLeft: '1rem',
+                  paddingRight: '1rem',
+                  border: `1px solid ${params.borderColor || '#3b82f6'}`,
+                  borderRadius: '0.375rem',
+                  marginTop: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+                  marginBottom: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+                  marginLeft: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+                  marginRight: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+                  backgroundColor: params.bgColor && params.bgColor !== 'transparent' ? params.bgColor : undefined,
+                  color: params.textColor || undefined,
+                }}
+              >
+                {params.heading ? <ReactMarkdown>{params.heading}</ReactMarkdown> : (params.content ? <ReactMarkdown>{params.content}</ReactMarkdown> : 'Content')}
+              </div>
+            </div>
+          );
+        } else {
+          parts.push(
+            <div
+              key={`shortcode-${match.index}`}
+              style={{
+                display: 'inline-flex',
+                border: `1px solid ${params.borderColor || '#3b82f6'}`,
+                paddingLeft: '1rem',
+                paddingRight: '1rem',
+                paddingTop: '0.5rem',
+                paddingBottom: '0.5rem',
+                borderRadius: '0.375rem',
+                marginTop: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+                marginBottom: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+                marginLeft: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+                marginRight: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+                width: params.width && params.width !== 'auto' ? params.width : undefined,
+                height: params.height && params.height !== 'auto' ? params.height : undefined,
+                backgroundColor: params.bgColor && params.bgColor !== 'transparent' ? params.bgColor : undefined,
+                color: params.bgColor === 'white' ? 'black' : (params.textColor || undefined),
+                flex: params.flex || undefined,
+              }}
+            >
+              {params.content ? <ReactMarkdown>{params.content}</ReactMarkdown> : 'Content'}
+            </div>
+          );
+        }
+        break;
+      
+      case 'underscored-space':
+        const count = parseInt(params.no || '1') || 1;
+        const spaces = Array.from({ length: count }).map((_, idx) => (
+          <span
+            key={`space-${idx}`}
+            style={{
+              display: 'inline-block',
+              borderBottom: `1px solid ${params.color || '#6b7280'}`,
+              userSelect: 'none',
+              marginTop: idx > 0 ? '1rem' : undefined,
+              height: '0.25rem',
+              maxWidth: '100%',
+              width: params.width || '6rem',
+            }}
+          />
+        ));
+        parts.push(
+          <Box 
+            key={`shortcode-${match.index}`}
+            sx={{ 
+              marginTop: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+              marginBottom: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
+              marginLeft: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+              marginRight: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
+            }}
+          >
+            {spaces}
+          </Box>
+        );
+        break;
+      
+      default:
+        // Unknown shortcode, show as text
+        parts.push(<span key={`shortcode-${match.index}`} style={{ opacity: 0.5 }}>{match[0]}</span>);
+    }
+
+    lastIndex = match.index + match[0].length;
+  });
+
+  // Add remaining text
+  if (lastIndex < content.length) {
+    const remainingText = content.substring(lastIndex).trim();
+    if (remainingText) {
+      parts.push(<span key={`text-${lastIndex}`}>{remainingText}</span>);
+    }
+  }
+
+  return parts.length > 0 ? <>{parts}</> : null;
+};
 
 // Helper function to parse and render markdown tables, handling tables without headers
 const renderMarkdownTables = (markdown: string) => {
@@ -53,42 +238,589 @@ const renderMarkdownTables = (markdown: string) => {
     return <ReactMarkdown remarkPlugins={[remarkGfm]}>{defaultTables}</ReactMarkdown>;
   }
   
-  // Process markdown to handle tables without headers
-  const processMarkdown = (md: string): string => {
+  // Process markdown to handle tables without headers and fix formatting
+  const processMarkdown = (md: string): { markdown: string; headinglessTables: Set<number> } => {
     const lines = md.split('\n');
     const processed: string[] = [];
+    const headinglessTables = new Set<number>();
     let i = 0;
+    let tableIndex = 0;
+    let inTable = false;
+    let tableStartIndex = -1;
     
     while (i < lines.length) {
       const line = lines[i];
-      const isSeparator = line.match(/^\|[\s\-\|:]+\|$/);
+      const trimmedLine = line.trim();
+      
+      // Check if this is a separator line
+      const isSeparator = trimmedLine.match(/^\|[\s\-\|:]+\|$/);
+      // Check if this is a table row
+      const isTableRow = trimmedLine.match(/^\|.*\|$/);
       
       if (isSeparator) {
         // Check previous line - if it's not a table row or is empty, this table has no header
         const prevLine = i > 0 ? lines[i - 1].trim() : '';
-        const isPrevTableRow = prevLine.match(/^\|[\s\w\|]+\|$/);
+        // Check if previous line is a table row (has pipes at start and end, even if cells are empty)
+        const isPrevTableRow = prevLine.match(/^\|.*\|$/);
+        
+        // If we were in a table and this is a new separator, we need to close the previous table
+        if (inTable && tableStartIndex >= 0 && tableStartIndex !== tableIndex) {
+          // Add multiple blank lines to ensure tables don't merge
+          processed.push('');
+          processed.push('');
+        }
+        
+        // Mark this as the start of a new table
+        if (!inTable) {
+          tableStartIndex = tableIndex;
+          inTable = true;
+        }
         
         // Check if previous line is empty or not a table row
-        if (!isPrevTableRow || prevLine === '' || prevLine.length === 0) {
-          // No header row - skip the separator line
-          i++;
-          continue;
+        // Only treat as headingless if there's truly no header row (empty line or non-table line before separator)
+        if (prevLine === '' || !isPrevTableRow) {
+          // No header row - we need to add a dummy header row before the separator
+          // Count columns from the separator
+          const columnCount = (trimmedLine.match(/\|/g) || []).length - 1;
+          if (columnCount > 0) {
+            // Create a dummy header row with empty cells
+            const dummyHeader = '|' + ' |'.repeat(columnCount);
+            processed.push(dummyHeader);
+            headinglessTables.add(tableIndex);
+          }
+        } else {
+          // There IS a header row - check if it's an empty header row
+          const cells = prevLine.split('|').slice(1, -1);
+          const allEmpty = cells.length === 0 || cells.every(cell => cell.trim() === '');
+          if (allEmpty) {
+            // Empty header row - treat as headingless
+            headinglessTables.add(tableIndex);
+            // Remove the empty header row from processed output if it was added
+            // Find and remove it (it should be the last table row we added)
+            for (let j = processed.length - 1; j >= 0; j--) {
+              if (processed[j].trim() === prevLine) {
+                processed.splice(j, 1);
+                break;
+              }
+            }
+            // Add a dummy header row instead (will be hidden later)
+            const columnCount = (trimmedLine.match(/\|/g) || []).length - 1;
+            if (columnCount > 0) {
+              const dummyHeader = '|' + ' |'.repeat(columnCount);
+              processed.push(dummyHeader);
+            }
+          }
+          // If it's a valid header row, it should already be in processed from the previous iteration
         }
+        // Always include the separator line
+        processed.push(line);
+        tableIndex++;
+      } else if (isTableRow) {
+        // Regular table row - check if it's an empty header row followed by a separator
+        const cells = trimmedLine.split('|').slice(1, -1);
+        const allEmpty = cells.length === 0 || cells.every(cell => cell.trim() === '');
+        
+        // Check if next line is a separator
+        const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+        const isNextSeparator = nextLine.match(/^\|[\s\-\|:]+\|$/);
+        
+        if (allEmpty && isNextSeparator) {
+          // This is an empty header row followed by a separator - skip it
+          // It will be replaced with a dummy header when we process the separator
+          if (!inTable) {
+            tableStartIndex = tableIndex;
+            inTable = true;
+          }
+          // Don't add this line - it will be replaced
+        } else {
+          // Regular table row - include it
+          if (!inTable) {
+            tableStartIndex = tableIndex;
+            inTable = true;
+          }
+          processed.push(line);
+        }
+      } else {
+        // Non-table line
+        // If we have consecutive empty lines after a table, it might indicate table end
+        if (inTable && trimmedLine === '') {
+          // Check if next non-empty line is not a table row
+          let nextNonEmpty = i + 1;
+          while (nextNonEmpty < lines.length && lines[nextNonEmpty].trim() === '') {
+            nextNonEmpty++;
+          }
+          if (nextNonEmpty < lines.length) {
+            const nextLine = lines[nextNonEmpty].trim();
+            const isNextTableRow = nextLine.match(/^\|.*\|$/);
+            const isNextSeparator = nextLine.match(/^\|[\s\-\|:]+\|$/);
+            // If next non-empty line is a table row or separator, we're starting a new table
+            if (isNextTableRow || isNextSeparator) {
+              // Add multiple blank lines to ensure tables don't merge
+              processed.push('');
+              processed.push('');
+              inTable = false;
+            }
+          }
+        } else if (trimmedLine !== '' && inTable) {
+          // Non-empty, non-table line - table has ended
+          inTable = false;
+        }
+        // Regular line - include it
+        processed.push(line);
       }
       
-      processed.push(line);
       i++;
     }
     
-    return processed.join('\n');
+    return { markdown: processed.join('\n'), headinglessTables };
   };
   
-  const processedMarkdown = processMarkdown(markdown);
-  return (
-    <Box sx={{ alignSelf: 'flex-start', width: '100%' }}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{processedMarkdown}</ReactMarkdown>
-    </Box>
-  );
+  // Parse table alignment from separator lines and create custom CSS
+  const parseTableAlignment = (md: string): { [tableIndex: number]: string[] } => {
+    const lines = md.split('\n');
+    const alignments: { [tableIndex: number]: string[] } = {};
+    let tableIndex = 0;
+    let i = 0;
+    
+    while (i < lines.length) {
+      const line = lines[i].trim();
+      const isSeparator = line.match(/^\|[\s\-\|:]+\|$/);
+      
+      if (isSeparator) {
+        // Parse alignment from separator
+        const cells = line.split('|').filter(c => c.trim() !== '');
+        const cellAlignments: string[] = [];
+        
+        cells.forEach(cell => {
+          const trimmed = cell.trim();
+          if (trimmed.startsWith(':') && trimmed.endsWith(':')) {
+            // Center: :---:
+            cellAlignments.push('center');
+          } else if (trimmed.endsWith(':')) {
+            // Right: ---:
+            cellAlignments.push('right');
+          } else if (trimmed.startsWith(':')) {
+            // Left: :---
+            cellAlignments.push('left');
+          } else {
+            // Default: left (---)
+            cellAlignments.push('left');
+          }
+        });
+        
+        alignments[tableIndex] = cellAlignments;
+        tableIndex++;
+      }
+      
+      i++;
+    }
+    
+    return alignments;
+  };
+  
+  const { markdown: processedMarkdown, headinglessTables } = processMarkdown(markdown);
+  const tableAlignments = parseTableAlignment(processedMarkdown);
+  
+  // Split markdown into table blocks - each table should be a separate block
+  const splitIntoTableBlocks = (md: string, headinglessSet: Set<number>): { block: string; headingless: boolean }[] => {
+    if (!md || md.trim() === '') return [];
+    
+    const lines = md.split('\n');
+    const blocks: { block: string; headingless: boolean }[] = [];
+    let currentBlock: string[] = [];
+    let inTable = false;
+    let currentTableIndex = -1; // Track which table index the current block corresponds to
+    let separatorCount = 0; // Track total separators seen (matches processMarkdown's tableIndex)
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      const isTableRow = trimmed.match(/^\|.*\|$/);
+      const isSeparator = trimmed.match(/^\|[\s\-\|:]+\|$/);
+      
+      if (isTableRow || isSeparator) {
+        // Check if this is an empty header row (only spaces between pipes)
+        if (isTableRow && !isSeparator) {
+          const cells = trimmed.split('|').slice(1, -1);
+          const allEmpty = cells.length === 0 || cells.every(cell => cell.trim() === '');
+          
+          // Check if next line is a separator - if so, this is an empty header row
+          const nextLine = i + 1 < lines.length ? lines[i + 1].trim() : '';
+          const isNextSeparator = nextLine.match(/^\|[\s\-\|:]+\|$/);
+          
+          if (allEmpty && isNextSeparator) {
+            // This is an empty header row - skip it completely
+            continue;
+          }
+        }
+        
+        // We're in a table
+        if (!inTable && currentBlock.length > 0) {
+          // Save previous non-table block
+          blocks.push({ block: currentBlock.join('\n'), headingless: false });
+          currentBlock = [];
+        }
+        inTable = true;
+        currentBlock.push(line);
+        
+        // If this is a separator, this corresponds to a table index in processMarkdown
+        // In processMarkdown, tableIndex is used when processing separator, then incremented
+        // So separatorCount here tracks the same: increment AFTER using it
+        if (isSeparator) {
+          // This separator corresponds to the current separatorCount index
+          currentTableIndex = separatorCount;
+          separatorCount++; // Increment for next separator
+        }
+      } else {
+        // Not a table row
+        if (inTable) {
+          // We were in a table, now we're not - save the table block
+          if (currentBlock.length > 0) {
+            const blockContent = currentBlock.join('\n');
+            const isTableBlock = blockContent.match(/^\|.*\|$/m);
+            if (isTableBlock) {
+              // This is a table block - use the table index we tracked
+              blocks.push({
+                block: blockContent,
+                headingless: headinglessSet.has(currentTableIndex),
+              });
+            } else {
+              blocks.push({ block: blockContent, headingless: false });
+            }
+            currentBlock = [];
+          }
+          inTable = false;
+          currentTableIndex = -1; // Reset for next table (will be set when we see its separator)
+        }
+        // Skip empty lines between tables
+        if (trimmed !== '') {
+          // Non-empty non-table line - start a new block
+          if (currentBlock.length > 0) {
+            blocks.push({ block: currentBlock.join('\n'), headingless: false });
+            currentBlock = [];
+          }
+          currentBlock.push(line);
+        }
+      }
+    }
+    
+    // Add remaining block
+    if (currentBlock.length > 0) {
+      const blockContent = currentBlock.join('\n');
+      const isTableBlock = blockContent.match(/^\|.*\|$/m);
+      if (isTableBlock && inTable) {
+        // For the last table, use the tracked table index
+        blocks.push({
+          block: blockContent,
+          headingless: headinglessSet.has(currentTableIndex),
+        });
+      } else {
+        blocks.push({ block: blockContent, headingless: false });
+      }
+    }
+    
+    // Filter out empty blocks and blocks that are just empty header rows
+    return blocks.filter(item => {
+      const trimmed = item.block.trim();
+      if (trimmed === '') return false;
+      
+      // Check if block is just an empty header row (like | | | |)
+      const lines = trimmed.split('\n');
+      if (lines.length === 1) {
+        const line = lines[0].trim();
+        if (line.match(/^\|.*\|$/)) {
+          const cells = line.split('|').slice(1, -1);
+          const allEmpty = cells.length === 0 || cells.every(cell => cell.trim() === '');
+          if (allEmpty) {
+            // This is just an empty header row - filter it out
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    });
+  };
+  
+  const tableBlocks = splitIntoTableBlocks(processedMarkdown, headinglessTables);
+  
+  // Create a component that uses ref to apply alignment after render
+  const TableRenderer: React.FC<{ markdown: string; alignments: { [key: number]: string[] }; tableBlocks: { block: string; headingless: boolean }[] }> = ({ markdown, alignments, tableBlocks }) => {
+    const containerRefs = React.useRef<(HTMLDivElement | null)[]>([]);
+    
+    React.useEffect(() => {
+      const hideHeaderRows = () => {
+        // Process all container refs - each container corresponds to one block
+        containerRefs.current.forEach((containerRef, blockIndex) => {
+          if (!containerRef) return;
+          
+          const tables = containerRef.querySelectorAll('table');
+          
+          // Each block should have exactly one table
+          tables.forEach((table) => {
+            // Use block metadata instead of global index
+            const isHeadingless = blockIndex < tableBlocks.length && tableBlocks[blockIndex].headingless;
+            
+            if (isHeadingless) {
+              // Mark the table with a data attribute for CSS targeting
+              (table as HTMLElement).setAttribute('data-headingless', 'true');
+              
+              // Try to hide the entire thead if it exists
+              const thead = table.querySelector('thead');
+              if (thead) {
+                (thead as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important; font-size: 0 !important;';
+                // Also hide all children
+                const theadChildren = thead.querySelectorAll('*');
+                theadChildren.forEach((child) => {
+                  (child as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important;';
+                });
+              }
+              
+              // Also check for header rows in tbody (ReactMarkdown sometimes puts headers there)
+              const tbody = table.querySelector('tbody');
+              if (tbody) {
+                const firstRow = tbody.querySelector('tr:first-of-type');
+                if (firstRow) {
+                  // Check if this row contains th elements (it's a header row)
+                  const hasTh = firstRow.querySelector('th');
+                  if (hasTh) {
+                    (firstRow as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important;';
+                    // Also hide all th elements in this row
+                    const thElements = firstRow.querySelectorAll('th');
+                    thElements.forEach((th) => {
+                      (th as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important; font-size: 0 !important;';
+                    });
+                  }
+                }
+              }
+              
+              // Fallback: check all rows and hide ONLY the first header row (with th elements, no td)
+              // This ensures we don't accidentally hide headers from other tables
+              const allRows = table.querySelectorAll('tr');
+              let foundHeaderRow = false;
+              
+              for (let j = 0; j < allRows.length; j++) {
+                const row = allRows[j];
+                // Skip if already hidden
+                if ((row as HTMLElement).style.display === 'none') continue;
+                
+                const hasTh = row.querySelector('th');
+                const hasTd = row.querySelector('td');
+                
+                // If it has th elements and no td elements, it's a header row - hide it completely
+                // But only if we haven't found a header row yet (first header row only)
+                if (hasTh && !hasTd && !foundHeaderRow) {
+                  (row as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important;';
+                  // Hide all th elements in this row
+                  const thElements = row.querySelectorAll('th');
+                  thElements.forEach((th) => {
+                    (th as HTMLElement).style.cssText = 'display: none !important; visibility: hidden !important; height: 0 !important; padding: 0 !important; margin: 0 !important; border: none !important; line-height: 0 !important; font-size: 0 !important;';
+                  });
+                  foundHeaderRow = true;
+                  break; // Only hide the first header row
+                }
+                
+                // If we find a data row (has td), stop looking (we've passed the header)
+                if (hasTd) break;
+              }
+            } else {
+              // For non-headingless tables, ensure header is visible
+              (table as HTMLElement).removeAttribute('data-headingless');
+            }
+            
+            // Apply alignment styles - need to map blockIndex to table index for alignments
+            // Since alignments uses separator-based indexing, we need to find which separator this block corresponds to
+            // For now, use blockIndex as a fallback (this might need adjustment if non-table blocks are mixed in)
+            const alignmentIndex = blockIndex; // This assumes table blocks are in order
+            if (alignments[alignmentIndex]) {
+              const cellAlignments = alignments[alignmentIndex];
+              const rows = table.querySelectorAll('tr');
+              
+              rows.forEach((row) => {
+                // Skip hidden rows
+                if ((row as HTMLElement).style.display === 'none') return;
+                
+                const cells = row.querySelectorAll('th, td');
+                cells.forEach((cell, colIndex) => {
+                  if (cellAlignments[colIndex]) {
+                    (cell as HTMLElement).style.textAlign = cellAlignments[colIndex];
+                  } else {
+                    (cell as HTMLElement).style.textAlign = 'left';
+                  }
+                });
+              });
+            } else {
+              // Default: all cells left-aligned
+              const rows = table.querySelectorAll('tr');
+              rows.forEach((row) => {
+                // Skip hidden rows
+                if ((row as HTMLElement).style.display === 'none') return;
+                
+                const cells = row.querySelectorAll('th, td');
+                cells.forEach((cell) => {
+                  (cell as HTMLElement).style.textAlign = 'left';
+                });
+              });
+            }
+          });
+        });
+      };
+      
+      // Also ensure non-headingless tables have their headers visible
+      const ensureNonHeadinglessHeadersVisible = () => {
+        containerRefs.current.forEach((containerRef, blockIndex) => {
+          if (!containerRef) return;
+          
+          const tables = containerRef.querySelectorAll('table');
+          tables.forEach((table) => {
+            // Use block metadata instead of global index
+            const isHeadingless = blockIndex < tableBlocks.length && tableBlocks[blockIndex].headingless;
+            
+            // If this table is NOT headingless, ensure its header is visible
+            if (!isHeadingless) {
+              const thead = table.querySelector('thead');
+              if (thead) {
+                (thead as HTMLElement).style.cssText = '';
+                const theadChildren = thead.querySelectorAll('*');
+                theadChildren.forEach((child) => {
+                  (child as HTMLElement).style.cssText = '';
+                });
+              }
+              // Also ensure first row in tbody with th is visible
+              const tbody = table.querySelector('tbody');
+              if (tbody) {
+                const firstRow = tbody.querySelector('tr:first-of-type');
+                if (firstRow) {
+                  const hasTh = firstRow.querySelector('th');
+                  if (hasTh) {
+                    (firstRow as HTMLElement).style.cssText = '';
+                    const thElements = firstRow.querySelectorAll('th');
+                    thElements.forEach((th) => {
+                      (th as HTMLElement).style.cssText = '';
+                    });
+                  }
+                }
+              }
+            }
+          });
+        });
+      };
+      
+      ensureNonHeadinglessHeadersVisible();
+      
+      // Run immediately
+      hideHeaderRows();
+      
+      // Also use MutationObserver to catch when ReactMarkdown finishes rendering
+      const observers: MutationObserver[] = [];
+      const timeouts: NodeJS.Timeout[] = [];
+      
+      containerRefs.current.forEach((containerRef) => {
+        if (containerRef) {
+          const observer = new MutationObserver(() => {
+            hideHeaderRows();
+          });
+          
+          observer.observe(containerRef, {
+            childList: true,
+            subtree: true,
+          });
+          
+          observers.push(observer);
+          
+          // Also run after a short delay to catch any late renders
+          const timeoutId = setTimeout(() => {
+            hideHeaderRows();
+          }, 100);
+          
+          timeouts.push(timeoutId);
+        }
+      });
+      
+      return () => {
+        observers.forEach(observer => observer.disconnect());
+        timeouts.forEach(timeout => clearTimeout(timeout));
+      };
+    }, [markdown, alignments, tableBlocks]);
+    
+    // Render each table block separately so they become direct flex children
+    return (
+      <>
+        {tableBlocks.map((blockItem, blockIndex) => {
+          const trimmedBlock = blockItem.block.trim();
+          
+          // Filter out blocks that are just empty header rows (like | | | |)
+          if (trimmedBlock.match(/^\|[\s\|]+\|$/m) && !trimmedBlock.match(/^\|[\s\-\|:]+\|$/m)) {
+            // This block is just an empty header row - skip it
+            return null;
+          }
+          
+          const isTableBlock = trimmedBlock.match(/^\|.*\|$/m); // Check if block contains table rows
+          
+          if (isTableBlock) {
+            // This is a table block - render it as a direct flex child
+            return (
+              <Box
+                key={blockIndex}
+                ref={(el: HTMLDivElement | null) => {
+                  containerRefs.current[blockIndex] = el;
+                }}
+                sx={{
+                  alignSelf: 'flex-start',
+                  width: '100%',
+                  '& table': {
+                    borderCollapse: 'collapse',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    width: '100%',
+                  },
+                  '& table th, & table td': {
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    padding: '8px',
+                    textAlign: 'left',
+                  },
+                  '& table th': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    fontWeight: 600,
+                  },
+                  '& table[data-headingless="true"] thead': {
+                    display: 'none !important',
+                    visibility: 'hidden !important',
+                    height: '0 !important',
+                    padding: '0 !important',
+                    margin: '0 !important',
+                    border: 'none !important',
+                    lineHeight: '0 !important',
+                  },
+                  '& table[data-headingless="true"] thead tr': {
+                    display: 'none !important',
+                    visibility: 'hidden !important',
+                    height: '0 !important',
+                    lineHeight: '0 !important',
+                  },
+                  '& table[data-headingless="true"] thead th': {
+                    display: 'none !important',
+                    visibility: 'hidden !important',
+                    height: '0 !important',
+                    padding: '0 !important',
+                    border: 'none !important',
+                    lineHeight: '0 !important',
+                    fontSize: '0 !important',
+                  },
+                }}
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {blockItem.block}
+                </ReactMarkdown>
+              </Box>
+            );
+          }
+          return null; // Skip non-table blocks for now
+        })}
+      </>
+    );
+  };
+  
+  return <TableRenderer markdown={processedMarkdown} alignments={tableAlignments} tableBlocks={tableBlocks} />;
 };
 
 // Helper function to convert color name to hex (for backward compatibility)
@@ -227,15 +959,72 @@ interface PreviewSectionProps {
   children: React.ReactNode;
 }
 
-const PreviewSection: React.FC<PreviewSectionProps> = ({ title = 'Live Preview', children }) => {
+const PreviewSection: React.FC<PreviewSectionProps> = ({ children }) => {
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const handleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  // Prevent body scroll when fullscreen is active
+  React.useEffect(() => {
+    if (isFullscreen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isFullscreen]);
+
+  if (isFullscreen) {
+    return (
+      <>
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            zIndex: 9999,
+            bgcolor: 'background.default',
+            display: 'flex',
+            flexDirection: 'column',
+            p: 2,
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6">Live Preview - Fullscreen</Typography>
+            <IconButton onClick={handleFullscreen} size="small">
+              <Minimize2 size={20} />
+            </IconButton>
+          </Box>
+          <Paper
+            sx={{
+              p: 2,
+              bgcolor: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: 2,
+              flex: 1,
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'flex-start',
+              overflow: 'auto',
+            }}
+          >
+            <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+              {children}
+            </Box>
+          </Paper>
+        </Box>
+      </>
+    );
+  }
+
   return (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-        <Eye size={16} />
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, fontSize: '0.875rem' }}>
-          {title}
-        </Typography>
-      </Box>
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
       <Paper
         sx={{
           p: 2,
@@ -247,11 +1036,18 @@ const PreviewSection: React.FC<PreviewSectionProps> = ({ title = 'Live Preview',
           alignItems: 'flex-start',
           justifyContent: 'flex-start',
           overflow: 'auto',
-          minHeight: '400px',
-          maxHeight: 'calc(80vh - 120px)',
+          minHeight: 0,
+          position: 'relative',
         }}
       >
-        <Box sx={{ width: '100%', alignSelf: 'flex-start' }}>
+        <Box sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
+          <Tooltip title="Fullscreen Preview" arrow>
+            <IconButton onClick={handleFullscreen} size="small" sx={{ p: 0.5, bgcolor: 'transparent', '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.1)' } }}>
+              <Maximize2 size={16} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        <Box sx={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
           {children}
         </Box>
       </Paper>
@@ -405,7 +1201,8 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
   const [height, setHeight] = useState('auto');
   const [bgColor, setBgColor] = useState('transparent');
   const [textColor, setTextColor] = useState('');
-  const [marginY, setMarginY] = useState('1rem');
+  const [marginY, setMarginY] = useState('0');
+  const [marginX, setMarginX] = useState('0');
 
   const handleReset = () => {
     setType('content');
@@ -417,7 +1214,8 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
     setHeight('auto');
     setBgColor('transparent');
     setTextColor('');
-    setMarginY('1rem');
+    setMarginY('0');
+    setMarginX('0');
   };
 
   const handleInsert = () => {
@@ -431,7 +1229,8 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
     if (height !== 'auto') params.push(`height="${height}"`);
     if (bgColor !== 'transparent') params.push(`bgColor="${bgColor}"`);
     if (textColor) params.push(`textColor="${textColor}"`);
-    if (marginY !== '1rem') params.push(`marginY="${marginY}"`);
+    if (marginY !== '0') params.push(`marginY="${marginY}"`);
+    if (marginX !== '0') params.push(`marginX="${marginX}"`);
 
     const shortcode = `{{< content-box${params.length > 0 ? ' ' + params.join(' ') : ''} >}}`;
     onInsert(shortcode);
@@ -450,8 +1249,10 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
           paddingRight: '1rem',
           border: `1px solid ${borderColor}`,
           borderRadius: '0.375rem',
-          marginTop: marginY,
-          marginBottom: marginY,
+          marginTop: marginY !== '0' ? marginY : undefined,
+          marginBottom: marginY !== '0' ? marginY : undefined,
+          marginLeft: marginX !== '0' ? marginX : undefined,
+          marginRight: marginX !== '0' ? marginX : undefined,
           backgroundColor: bgColor !== 'transparent' ? bgColor : undefined,
           color: textColor || undefined,
         }}
@@ -468,10 +1269,11 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
         paddingRight: '1rem',
         paddingTop: '0.5rem',
         paddingBottom: '0.5rem',
-        marginRight: '1rem',
         borderRadius: '0.375rem',
-        marginTop: marginY,
-        marginBottom: marginY,
+        marginTop: marginY !== '0' ? marginY : undefined,
+        marginBottom: marginY !== '0' ? marginY : undefined,
+        marginLeft: marginX !== '0' ? marginX : undefined,
+        marginRight: marginX !== '0' ? marginX : undefined,
         width: width !== 'auto' ? width : undefined,
         height: height !== 'auto' ? height : undefined,
         backgroundColor: bgColor !== 'transparent' ? bgColor : undefined,
@@ -479,7 +1281,7 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
         alignSelf: 'flex-start',
       }}
     >
-      {content ? <ReactMarkdown>{content}</ReactMarkdown> : <span style={{ opacity: 0.5 }}>Preview content</span>}
+      {content ? <ReactMarkdown>{content}</ReactMarkdown> : <span style={{ opacity: 0.5 }}>content</span>}
     </div>
   );
 
@@ -487,14 +1289,19 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { maxWidth: '900px', height: '80vh' } }}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">Content Box Shortcode</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6">Content Box</Typography>
+            <Tooltip title="Content Box is used to display content or headings with customizable borders, colors, and dimensions." arrow>
+              <HelpCircle size={18} style={{ cursor: 'help', opacity: 0.7 }} />
+            </Tooltip>
+          </Box>
           <IconButton onClick={onClose} size="small">
             <X size={20} />
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1 }}>
+      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <FormControl fullWidth size="small">
             <InputLabel>Type</InputLabel>
             <Select value={type} onChange={(e) => setType(e.target.value)} label="Type">
@@ -559,13 +1366,22 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
             />
           </Box>
           
-          <NumberWithUnitInput
-            label="Vertical Margin"
-            value={marginY}
-            onChange={setMarginY}
-            placeholder="1"
-            defaultUnit="rem"
-          />
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <NumberWithUnitInput
+              label="Vertical Margin"
+              value={marginY}
+              onChange={setMarginY}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+            <NumberWithUnitInput
+              label="Horizontal Margin"
+              value={marginX}
+              onChange={setMarginX}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+          </Box>
           
           <ColorPicker
             label="Background Color"
@@ -585,14 +1401,18 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
         
         <Divider orientation="vertical" flexItem />
         
-        <Box sx={{ flex: 1, minWidth: '300px' }}>
+        <Box sx={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <PreviewSection>
             {previewHtml}
           </PreviewSection>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleReset} color="secondary">Reset</Button>
+        <Tooltip title="Reset" arrow>
+          <IconButton onClick={handleReset} color="secondary">
+            <RotateCcw size={20} />
+          </IconButton>
+        </Tooltip>
         <Box sx={{ flex: 1 }} />
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleInsert} variant="contained">Insert</Button>
@@ -606,13 +1426,15 @@ const LineDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
   const [width, setWidth] = useState('100%');
   const [height, setHeight] = useState('1px');
   const [color, setColor] = useState('#6b7280'); // gray-500
-  const [marginY, setMarginY] = useState('1.125rem');
+  const [marginY, setMarginY] = useState('0');
+  const [marginX, setMarginX] = useState('0');
 
   const handleReset = () => {
     setWidth('100%');
     setHeight('1px');
     setColor('#6b7280');
-    setMarginY('1.125rem');
+    setMarginY('0');
+    setMarginX('0');
   };
 
   const handleInsert = () => {
@@ -620,7 +1442,8 @@ const LineDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
     if (width !== '100%') params.push(`width="${width}"`);
     if (height !== '1px') params.push(`height="${height}"`);
     if (color !== '#6b7280') params.push(`color="${color}"`);
-    if (marginY !== '1.125rem') params.push(`marginY="${marginY}"`);
+    if (marginY !== '0') params.push(`marginY="${marginY}"`);
+    if (marginX !== '0') params.push(`marginX="${marginX}"`);
 
     const shortcode = `{{< line${params.length > 0 ? ' ' + params.join(' ') : ''} >}}`;
     onInsert(shortcode);
@@ -638,6 +1461,8 @@ const LineDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
         height: height,
         marginTop: marginY !== '0' ? marginY : undefined,
         marginBottom: marginY !== '0' ? marginY : undefined,
+        marginLeft: marginX !== '0' ? marginX : undefined,
+        marginRight: marginX !== '0' ? marginX : undefined,
         alignSelf: 'flex-start',
       }}
     />
@@ -647,14 +1472,19 @@ const LineDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { maxWidth: '900px', height: '80vh' } }}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">Line Shortcode</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6">Line</Typography>
+            <Tooltip title="Line is used to create horizontal divider lines with customizable width, height, and color." arrow>
+              <HelpCircle size={18} style={{ cursor: 'help', opacity: 0.7 }} />
+            </Tooltip>
+          </Box>
           <IconButton onClick={onClose} size="small">
             <X size={20} />
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1 }}>
+      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <NumberWithUnitInput
             label="Width"
             value={width}
@@ -687,14 +1517,18 @@ const LineDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
         
         <Divider orientation="vertical" flexItem />
         
-        <Box sx={{ flex: 1, minWidth: '300px' }}>
+        <Box sx={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <PreviewSection>
             {previewHtml}
           </PreviewSection>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleReset} color="secondary">Reset</Button>
+        <Tooltip title="Reset" arrow>
+          <IconButton onClick={handleReset} color="secondary">
+            <RotateCcw size={20} />
+          </IconButton>
+        </Tooltip>
         <Box sx={{ flex: 1 }} />
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleInsert} variant="contained">Insert</Button>
@@ -708,19 +1542,120 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
   const [direction, setDirection] = useState('row');
   const [justifyContent, setJustifyContent] = useState('start');
   const [alignItems, setAlignItems] = useState('start');
+  const [alignContent, setAlignContent] = useState('start');
   const [gap, setGap] = useState('1rem');
-  const [marginY, setMarginY] = useState('1rem');
+  const [marginY, setMarginY] = useState('0');
+  const [marginX, setMarginX] = useState('0');
   const [flex, setFlex] = useState('');
+  const [flexType, setFlexType] = useState<'preset' | 'custom'>('preset');
+  const [flexPreset, setFlexPreset] = useState('initial');
+  const [flexCustom, setFlexCustom] = useState('');
+  const [flexTarget, setFlexTarget] = useState('container');
   const [innerContent, setInnerContent] = useState('');
 
   const handleReset = () => {
     setDirection('row');
     setJustifyContent('start');
     setAlignItems('start');
+    setAlignContent('start');
     setGap('1rem');
-    setMarginY('1rem');
+    setMarginY('0');
+    setMarginX('0');
     setFlex('');
+    setFlexType('preset');
+    setFlexPreset('initial');
+    setFlexCustom('');
+    setFlexTarget('container');
     setInnerContent('');
+  };
+
+  // Process innerContent to add flex property to shortcodes or wrap text content
+  const processInnerContent = (content: string): string => {
+    if (flexTarget === 'container' || !content) return content;
+    
+    const flexValue = flexType === 'preset' ? flexPreset : flexCustom;
+    if (!flexValue) return content;
+
+    // Parse content to find shortcodes and text
+    const shortcodePattern = /\{\{<\s*([\w-]+)([^>]*?)\s*>\}\}/g;
+    const parts: Array<{ type: 'shortcode' | 'text'; content: string; index: number }> = [];
+    let lastIndex = 0;
+    let match;
+    const matches: RegExpExecArray[] = [];
+    
+    // Collect all matches
+    while ((match = shortcodePattern.exec(content)) !== null) {
+      matches.push(match);
+    }
+
+    matches.forEach((match) => {
+      // Add text before shortcode
+      if (match.index > lastIndex) {
+        const textBefore = content.substring(lastIndex, match.index);
+        if (textBefore.trim()) {
+          parts.push({ type: 'text', content: textBefore, index: lastIndex });
+        }
+      }
+      // Add shortcode
+      parts.push({ type: 'shortcode', content: match[0], index: match.index });
+      lastIndex = match.index + match[0].length;
+    });
+
+    // Add remaining text
+    if (lastIndex < content.length) {
+      const remainingText = content.substring(lastIndex);
+      if (remainingText.trim()) {
+        parts.push({ type: 'text', content: remainingText, index: lastIndex });
+      }
+    }
+
+    // If no parts found, return original content
+    if (parts.length === 0) return content;
+
+    // Find first and last shortcode indices
+    const firstShortcodeIdx = parts.findIndex(p => p.type === 'shortcode');
+    const lastShortcodeIdx = parts.length > 0 ? parts.map((p, i) => ({ type: p.type, idx: i })).filter(p => p.type === 'shortcode').pop()?.idx ?? -1 : -1;
+
+    // Process parts based on flexTarget
+    const processedParts = parts.map((part, idx) => {
+      if (part.type === 'shortcode') {
+        // Check if we need to add flex to this shortcode
+        let shouldAddFlex = false;
+        if (flexTarget === 'all-children') {
+          shouldAddFlex = true;
+        } else if (flexTarget === 'first-child') {
+          shouldAddFlex = idx === firstShortcodeIdx;
+        } else if (flexTarget === 'last-child') {
+          shouldAddFlex = idx === lastShortcodeIdx;
+        }
+
+        if (shouldAddFlex && !part.content.includes('flex=')) {
+          // Insert flex before the closing >}}
+          part.content = part.content.replace(/>\}\}/, ` flex="${flexValue}">}}`);
+        }
+        return part.content;
+      } else {
+        // Wrap text content in content-box with flex property
+        let shouldWrap = false;
+        if (flexTarget === 'all-children') {
+          shouldWrap = true;
+        } else if (flexTarget === 'first-child') {
+          // Wrap text only if it's the first part and there are no shortcodes before it
+          shouldWrap = idx === 0 && firstShortcodeIdx === -1;
+        } else if (flexTarget === 'last-child') {
+          // Wrap text only if it's the last part and there are no shortcodes after it
+          shouldWrap = idx === parts.length - 1 && lastShortcodeIdx === -1;
+        }
+
+        if (shouldWrap) {
+          const escapedContent = part.content.trim().replace(/"/g, '&quot;').replace(/\n/g, ' ');
+          return `{{< content-box content="${escapedContent}" flex="${flexValue}" >}}`;
+        }
+        return part.content;
+      }
+    });
+
+    return processedParts.join('');
   };
 
   const handleInsert = () => {
@@ -728,11 +1663,24 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
     if (direction !== 'row') params.push(`direction="${direction}"`);
     if (justifyContent !== 'start') params.push(`justifyContent="${justifyContent}"`);
     if (alignItems !== 'start') params.push(`alignItems="${alignItems}"`);
+    if (alignContent !== 'start') params.push(`alignContent="${alignContent}"`);
     if (gap !== '1rem') params.push(`gap="${gap}"`);
-    if (marginY !== '1rem') params.push(`marginY="${marginY}"`);
-    if (flex) params.push(`flex="${flex}"`);
+    if (marginY !== '0') params.push(`marginY="${marginY}"`);
+    if (marginX !== '0') params.push(`marginX="${marginX}"`);
+    
+    const flexValue = flexType === 'preset' ? flexPreset : flexCustom;
+    if (flexValue && flexTarget === 'container') {
+      params.push(`flex="${flexValue}"`);
+    }
+    if (flexValue && flexTarget !== 'container') {
+      params.push(`flexTarget="${flexTarget}"`);
+    }
 
-    const shortcode = `{{< flex${params.length > 0 ? ' ' + params.join(' ') : ''} >}}${innerContent || '\n  Your content here\n'}{{< /flex >}}`;
+    const processedContent = flexValue && flexTarget !== 'container' 
+      ? processInnerContent(innerContent || '\n  Your content here\n')
+      : (innerContent || '\n  Your content here\n');
+
+    const shortcode = `{{< flex${params.length > 0 ? ' ' + params.join(' ') : ''} >}}${processedContent}{{< /flex >}}`;
     onInsert(shortcode);
     onClose();
     handleReset();
@@ -740,11 +1688,9 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
 
   // Generate preview HTML
   const getFlexValue = () => {
-    if (!flex) return undefined;
-    if (flex === '1' || flex === 'auto' || flex === 'initial' || flex === 'none') {
-      return flex;
-    }
-    return flex;
+    const flexValue = flexType === 'preset' ? flexPreset : flexCustom;
+    if (!flexValue) return undefined;
+    return flexValue;
   };
 
   const flexValue = getFlexValue();
@@ -760,46 +1706,194 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
     'center': 'center',
     'end': 'flex-end',
   };
+  const alignContentMap: { [key: string]: string } = {
+    'start': 'flex-start',
+    'center': 'center',
+    'end': 'flex-end',
+    'between': 'space-between',
+    'around': 'space-around',
+    'stretch': 'stretch',
+  };
+
+  // Apply flex to rendered content based on flexTarget
+  const applyFlexToContent = (content: React.ReactNode, flexValue: string | undefined, target: string): React.ReactNode => {
+    if (!flexValue || target === 'container' || !content) return content;
+    
+    if (React.isValidElement(content)) {
+      if (content.type === React.Fragment) {
+        const fragmentProps = content.props as { children?: React.ReactNode };
+        const children = React.Children.toArray(fragmentProps.children);
+        
+        // Find indices of shortcode elements (elements that are not just text spans)
+        const shortcodeIndices: number[] = [];
+        children.forEach((child, idx) => {
+          if (React.isValidElement(child)) {
+            // Check if it's a shortcode element (has className or specific structure)
+            const childProps = child.props as { className?: string; style?: React.CSSProperties; key?: React.Key };
+            const key = child.key?.toString() || '';
+            const className = childProps.className || '';
+            const style = childProps.style || {};
+            // More comprehensive detection: check key first (shortcodes have keys starting with "shortcode-"), then className/structure
+            const isShortcode = 
+              key.startsWith('shortcode-') ||
+              className.includes('inline-block') || 
+              className.includes('inline-flex') || 
+              className.includes('border') ||  // This will match border-b, border-t, etc.
+              (typeof child.type === 'string' && child.type === 'div' && (style.border || style.borderColor || style.display === 'inline-flex' || style.display === 'flex')) ||
+              (typeof child.type === 'string' && child.type === 'span' && (className.includes('border') || style.border || style.borderColor || className.includes('inline-block')));
+            if (isShortcode) {
+              shortcodeIndices.push(idx);
+            }
+          }
+        });
+        
+        // If no shortcodes found, treat all non-text elements as potential targets
+        const hasShortcodes = shortcodeIndices.length > 0;
+        
+        return React.cloneElement(content as React.ReactElement<any>, {
+          children: children.map((child, idx) => {
+            if (!React.isValidElement(child)) {
+              // Wrap text nodes in a span with flex only if no shortcodes exist
+              if (!hasShortcodes) {
+                let shouldApplyFlex = false;
+                if (target === 'all-children') {
+                  shouldApplyFlex = true;
+                } else if (target === 'first-child') {
+                  shouldApplyFlex = idx === 0;
+                } else if (target === 'last-child') {
+                  shouldApplyFlex = idx === children.length - 1;
+                }
+                
+                if (shouldApplyFlex && typeof child === 'string' && child.trim()) {
+                  return (
+                    <span key={`text-flex-${idx}`} style={{ flex: flexValue, display: 'inline-block' }}>
+                      {child}
+                    </span>
+                  );
+                }
+              }
+              return child;
+            }
+            
+            // Determine if this element should get flex
+            let shouldApplyFlex = false;
+            if (target === 'all-children') {
+              shouldApplyFlex = true;
+            } else if (target === 'first-child') {
+              if (hasShortcodes) {
+                // Apply to first shortcode
+                shouldApplyFlex = idx === shortcodeIndices[0];
+              } else {
+                // Apply to first element
+                shouldApplyFlex = idx === 0;
+              }
+            } else if (target === 'last-child') {
+              if (hasShortcodes) {
+                // Apply to last shortcode
+                shouldApplyFlex = idx === shortcodeIndices[shortcodeIndices.length - 1];
+              } else {
+                // Apply to last element
+                shouldApplyFlex = idx === children.length - 1;
+              }
+            }
+            
+            if (shouldApplyFlex) {
+              const childProps = child.props as { style?: React.CSSProperties; [key: string]: any };
+              const currentStyle = childProps.style || {};
+              // Ensure flex is applied correctly - merge with existing styles
+              const newStyle = {
+                ...currentStyle,
+                flex: flexValue,
+              };
+              return React.cloneElement(child as React.ReactElement<any>, {
+                style: newStyle,
+              });
+            }
+            return child;
+          }),
+        });
+      } else {
+        // Single element, apply flex directly
+        const contentProps = content.props as { style?: React.CSSProperties; [key: string]: any };
+        const currentStyle = contentProps.style || {};
+        return React.cloneElement(content as React.ReactElement<any>, {
+          style: {
+            ...currentStyle,
+            flex: flexValue,
+          },
+        });
+      }
+    }
+    return content;
+  };
+
+  const renderedContent = innerContent ? parseAndRenderShortcodes(innerContent) : null;
+  const contentWithFlex = renderedContent && flexValue && flexTarget !== 'container' 
+    ? applyFlexToContent(renderedContent, flexValue, flexTarget)
+    : renderedContent;
+  const showPlaceholder = !contentWithFlex;
 
   const previewHtml = (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        alignItems: alignItemsMap[alignItems] || 'flex-start',
-        justifyContent: justifyContentMap[justifyContent] || 'flex-start',
-        flexDirection: direction === 'column' ? 'column' : 'row',
-        marginTop: marginY,
-        marginBottom: marginY,
-        gap: gap,
-        flex: flexValue,
-        alignSelf: 'flex-start',
-      }}
-    >
-      {innerContent ? (
-        <div dangerouslySetInnerHTML={{ __html: innerContent }} />
-      ) : (
-        <>
-          <div style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}>Item 1</div>
-          <div style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}>Item 2</div>
-          <div style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }}>Item 3</div>
-        </>
+    <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: alignItemsMap[alignItems] || 'flex-start',
+          alignContent: alignContentMap[alignContent] || 'flex-start',
+          justifyContent: justifyContentMap[justifyContent] || 'flex-start',
+          flexDirection: direction === 'column' ? 'column' : 'row',
+          marginTop: marginY !== '0' ? marginY : undefined,
+          marginBottom: marginY !== '0' ? marginY : undefined,
+          marginLeft: marginX !== '0' ? marginX : undefined,
+          marginRight: marginX !== '0' ? marginX : undefined,
+          gap: gap,
+          flex: flexValue && flexTarget === 'container' ? flexValue : undefined,
+          width: '100%',
+          height: '100%',
+          minHeight: direction === 'row' ? '100%' : 'auto',
+          alignSelf: 'stretch',
+          paddingTop: (alignItems === 'start' || alignItems === 'end') && direction === 'row' && marginY !== '0' ? marginY : undefined,
+          paddingBottom: (alignItems === 'start' || alignItems === 'end') && direction === 'row' && marginY !== '0' ? marginY : undefined,
+        }}
+      >
+        {contentWithFlex}
+      </div>
+      {showPlaceholder && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+          }}
+        >
+          <Typography variant="body2" sx={{ color: 'text.secondary', opacity: 0.6, textAlign: 'center', whiteSpace: 'nowrap' }}>
+            Live preview will be shown here
+          </Typography>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { maxWidth: '900px', height: '80vh' } }}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">Flex Shortcode</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6">Flex</Typography>
+            <Tooltip title="Flex is used to arrange child items in one dimensional layout. The child items can be normal content or line, content-box, empty-box, underscored-space and even another flex (if child flex items are needed)." arrow>
+              <HelpCircle size={18} style={{ cursor: 'help', opacity: 0.7 }} />
+            </Tooltip>
+          </Box>
           <IconButton onClick={onClose} size="small">
             <X size={20} />
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1 }}>
+      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <FormControl fullWidth size="small">
             <InputLabel>Direction</InputLabel>
             <Select value={direction} onChange={(e) => setDirection(e.target.value)} label="Direction">
@@ -828,6 +1922,18 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
             </Select>
           </FormControl>
           
+          <FormControl fullWidth size="small">
+            <InputLabel>Align Content</InputLabel>
+            <Select value={alignContent} onChange={(e) => setAlignContent(e.target.value)} label="Align Content">
+              <MenuItem value="start">Start</MenuItem>
+              <MenuItem value="center">Center</MenuItem>
+              <MenuItem value="end">End</MenuItem>
+              <MenuItem value="between">Between</MenuItem>
+              <MenuItem value="around">Around</MenuItem>
+              <MenuItem value="stretch">Stretch</MenuItem>
+            </Select>
+          </FormControl>
+          
           <NumberWithUnitInput
             label="Gap"
             value={gap}
@@ -836,46 +1942,167 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
             defaultUnit="rem"
           />
           
-          <NumberWithUnitInput
-            label="Vertical Margin"
-            value={marginY}
-            onChange={setMarginY}
-            placeholder="1"
-            defaultUnit="rem"
-          />
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <NumberWithUnitInput
+              label="Vertical Margin"
+              value={marginY}
+              onChange={setMarginY}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+            <NumberWithUnitInput
+              label="Horizontal Margin"
+              value={marginX}
+              onChange={setMarginX}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+          </Box>
           
-          <TextField
-            fullWidth
-            size="small"
-            label="Flex (optional)"
-            value={flex}
-            onChange={(e) => setFlex(e.target.value)}
-            placeholder="e.g., 1, auto, initial, none, or custom value"
-            helperText="Values: 1, auto, initial, none, or any custom flex value"
-          />
+          <FormControl fullWidth size="small">
+            <InputLabel>Flex Target</InputLabel>
+            <Select value={flexTarget} onChange={(e) => setFlexTarget(e.target.value)} label="Flex Target">
+              <MenuItem value="container">Container</MenuItem>
+              <MenuItem value="all-children">All Children</MenuItem>
+              <MenuItem value="first-child">First Child</MenuItem>
+              <MenuItem value="last-child">Last Child</MenuItem>
+            </Select>
+          </FormControl>
           
-          <TextField
-            fullWidth
-            size="small"
-            label="Content (optional)"
-            value={innerContent}
-            onChange={(e) => setInnerContent(e.target.value)}
-            multiline
-            rows={3}
-            placeholder="Content inside flex container"
-          />
+          {flexTarget !== 'container' && (
+            <>
+              <FormControl fullWidth size="small">
+                <InputLabel>Flex Type</InputLabel>
+                <Select value={flexType} onChange={(e) => setFlexType(e.target.value as 'preset' | 'custom')} label="Flex Type">
+                  <MenuItem value="preset">Preset</MenuItem>
+                  <MenuItem value="custom">Custom</MenuItem>
+                </Select>
+              </FormControl>
+              
+              {flexType === 'preset' ? (
+                <FormControl fullWidth size="small">
+                  <InputLabel>Flex Value</InputLabel>
+                  <Select value={flexPreset} onChange={(e) => setFlexPreset(e.target.value)} label="Flex Value">
+                    <MenuItem value="1">1</MenuItem>
+                    <MenuItem value="auto">auto</MenuItem>
+                    <MenuItem value="initial">initial</MenuItem>
+                    <MenuItem value="none">none</MenuItem>
+                  </Select>
+                </FormControl>
+              ) : (
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Custom Flex Value"
+                  value={flexCustom}
+                  onChange={(e) => setFlexCustom(e.target.value)}
+                  placeholder="e.g., 2, 1 1 auto, 0 1 auto"
+                  helperText="Enter custom flex value (e.g., 2, 1 1 auto)"
+                />
+              )}
+            </>
+          )}
+          
+          {flexTarget === 'container' && (
+            <>
+              <FormControl fullWidth size="small">
+                <InputLabel>Flex Type</InputLabel>
+                <Select value={flexType} onChange={(e) => setFlexType(e.target.value as 'preset' | 'custom')} label="Flex Type">
+                  <MenuItem value="preset">Preset</MenuItem>
+                  <MenuItem value="custom">Custom</MenuItem>
+                </Select>
+              </FormControl>
+              
+              {flexType === 'preset' ? (
+                <FormControl fullWidth size="small">
+                  <InputLabel>Flex Value</InputLabel>
+                  <Select value={flexPreset} onChange={(e) => setFlexPreset(e.target.value)} label="Flex Value">
+                    <MenuItem value="1">1</MenuItem>
+                    <MenuItem value="auto">auto</MenuItem>
+                    <MenuItem value="initial">initial</MenuItem>
+                    <MenuItem value="none">none</MenuItem>
+                  </Select>
+                </FormControl>
+              ) : (
+                <TextField
+                  fullWidth
+                  size="small"
+                  label="Custom Flex Value"
+                  value={flexCustom}
+                  onChange={(e) => setFlexCustom(e.target.value)}
+                  placeholder="e.g., 2, 1 1 auto, 0 1 auto"
+                  helperText="Enter custom flex value (e.g., 2, 1 1 auto). Applied to the flex container itself."
+                />
+              )}
+            </>
+          )}
+          
+          <Box>
+            <TextField
+              fullWidth
+              size="small"
+              label="Content (optional)"
+              value={innerContent}
+              onChange={(e) => setInnerContent(e.target.value)}
+              multiline
+              rows={3}
+              placeholder="Content inside flex container"
+            />
+            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Minus size={14} />}
+                onClick={() => setInnerContent(prev => prev + (prev ? '\n' : '') + '{{< line >}}')}
+                sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+              >
+                Line
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<BoxIcon size={14} />}
+                onClick={() => setInnerContent(prev => prev + (prev ? '\n' : '') + '{{< empty-box >}}')}
+                sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+              >
+                Empty Box
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Square size={14} />}
+                onClick={() => setInnerContent(prev => prev + (prev ? '\n' : '') + '{{< content-box content="content" >}}')}
+                sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+              >
+                Content Box
+              </Button>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Underline size={14} />}
+                onClick={() => setInnerContent(prev => prev + (prev ? '\n' : '') + '{{< underscored-space >}}')}
+                sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+              >
+                Underscored Space
+              </Button>
+            </Box>
+          </Box>
         </Box>
         
         <Divider orientation="vertical" flexItem />
         
-        <Box sx={{ flex: 1, minWidth: '300px' }}>
+        <Box sx={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <PreviewSection>
             {previewHtml}
           </PreviewSection>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleReset} color="secondary">Reset</Button>
+        <Tooltip title="Reset" arrow>
+          <IconButton onClick={handleReset} color="secondary">
+            <RotateCcw size={20} />
+          </IconButton>
+        </Tooltip>
         <Box sx={{ flex: 1 }} />
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleInsert} variant="contained">Insert</Button>
@@ -889,18 +2116,22 @@ const TableFlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInse
   const [direction, setDirection] = useState('row');
   const [justifyContent, setJustifyContent] = useState('start');
   const [alignItems, setAlignItems] = useState('start');
+  const [alignContent, setAlignContent] = useState('start');
   const [gap, setGap] = useState('1rem');
   const [wrap, setWrap] = useState('wrap');
-  const [marginY, setMarginY] = useState('1rem');
+  const [marginY, setMarginY] = useState('0');
+  const [marginX, setMarginX] = useState('0');
   const [innerContent, setInnerContent] = useState('');
 
   const handleReset = () => {
     setDirection('row');
     setJustifyContent('start');
     setAlignItems('start');
+    setAlignContent('start');
     setGap('1rem');
     setWrap('wrap');
-    setMarginY('1rem');
+    setMarginY('0');
+    setMarginX('0');
     setInnerContent('');
   };
 
@@ -909,9 +2140,11 @@ const TableFlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInse
     if (direction !== 'row') params.push(`direction="${direction}"`);
     if (justifyContent !== 'start') params.push(`justifyContent="${justifyContent}"`);
     if (alignItems !== 'start') params.push(`alignItems="${alignItems}"`);
+    if (alignContent !== 'start') params.push(`alignContent="${alignContent}"`);
     if (gap !== '1rem') params.push(`gap="${gap}"`);
     if (wrap !== 'wrap') params.push(`wrap="${wrap}"`);
-    if (marginY !== '1rem') params.push(`marginY="${marginY}"`);
+    if (marginY !== '0') params.push(`marginY="${marginY}"`);
+    if (marginX !== '0') params.push(`marginX="${marginX}"`);
 
     const shortcode = `{{< table-flex${params.length > 0 ? ' ' + params.join(' ') : ''} >}}${innerContent || '\n  Your content here\n'}{{< /table-flex >}}`;
     onInsert(shortcode);
@@ -932,41 +2165,75 @@ const TableFlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInse
     'center': 'center',
     'end': 'flex-end',
   };
+  const alignContentMap: { [key: string]: string } = {
+    'start': 'flex-start',
+    'center': 'center',
+    'end': 'flex-end',
+    'between': 'space-between',
+    'around': 'space-around',
+    'stretch': 'stretch',
+  };
 
   const previewHtml = (
-    <div
-      style={{
-        display: 'flex',
-        flexWrap: wrap === 'nowrap' ? 'nowrap' : 'wrap',
-        alignItems: alignItemsMap[alignItems] || 'flex-start',
-        justifyContent: justifyContentMap[justifyContent] || 'flex-start',
-        flexDirection: direction === 'column' ? 'column' : 'row',
-        marginTop: marginY,
-        marginBottom: marginY,
-        gap: gap,
-        alignSelf: 'flex-start',
-      }}
-    >
-      {innerContent ? (
-        renderMarkdownTables(innerContent)
-      ) : (
-        renderMarkdownTables('')
+    <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexWrap: wrap === 'nowrap' ? 'nowrap' : 'wrap',
+          alignItems: alignItemsMap[alignItems] || 'flex-start',
+          alignContent: alignContentMap[alignContent] || 'flex-start',
+          justifyContent: justifyContentMap[justifyContent] || 'flex-start',
+          flexDirection: direction === 'column' ? 'column' : 'row',
+          marginTop: marginY !== '0' ? marginY : undefined,
+          marginBottom: marginY !== '0' ? marginY : undefined,
+          marginLeft: marginX !== '0' ? marginX : undefined,
+          marginRight: marginX !== '0' ? marginX : undefined,
+          gap: gap,
+          width: '100%',
+          height: '100%',
+          minHeight: direction === 'row' ? '100%' : 'auto',
+          alignSelf: 'stretch',
+          paddingTop: (alignItems === 'start' || alignItems === 'end') && direction === 'row' && marginY !== '0' ? marginY : undefined,
+          paddingBottom: (alignItems === 'start' || alignItems === 'end') && direction === 'row' && marginY !== '0' ? marginY : undefined,
+        }}
+      >
+        {innerContent && renderMarkdownTables(innerContent)}
+      </div>
+      {!innerContent && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+          }}
+        >
+          <Typography variant="body2" sx={{ color: 'text.secondary', opacity: 0.6, textAlign: 'center', whiteSpace: 'nowrap' }}>
+            Live preview will be shown here
+          </Typography>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { maxWidth: '900px', height: '80vh' } }}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">Table Flex Shortcode</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6">Table Flex</Typography>
+            <Tooltip title="Table Flex is used to arrange the continuous multiple markdown tables in one dimensional layout." arrow>
+              <HelpCircle size={18} style={{ cursor: 'help', opacity: 0.7 }} />
+            </Tooltip>
+          </Box>
           <IconButton onClick={onClose} size="small">
             <X size={20} />
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1 }}>
+      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <FormControl fullWidth size="small">
             <InputLabel>Direction</InputLabel>
             <Select value={direction} onChange={(e) => setDirection(e.target.value)} label="Direction">
@@ -995,6 +2262,18 @@ const TableFlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInse
             </Select>
           </FormControl>
           
+          <FormControl fullWidth size="small">
+            <InputLabel>Align Content</InputLabel>
+            <Select value={alignContent} onChange={(e) => setAlignContent(e.target.value)} label="Align Content">
+              <MenuItem value="start">Start</MenuItem>
+              <MenuItem value="center">Center</MenuItem>
+              <MenuItem value="end">End</MenuItem>
+              <MenuItem value="between">Between</MenuItem>
+              <MenuItem value="around">Around</MenuItem>
+              <MenuItem value="stretch">Stretch</MenuItem>
+            </Select>
+          </FormControl>
+          
           <NumberWithUnitInput
             label="Gap"
             value={gap}
@@ -1011,36 +2290,68 @@ const TableFlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInse
             </Select>
           </FormControl>
           
-          <NumberWithUnitInput
-            label="Vertical Margin"
-            value={marginY}
-            onChange={setMarginY}
-            placeholder="1"
-            defaultUnit="rem"
-          />
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <NumberWithUnitInput
+              label="Vertical Margin"
+              value={marginY}
+              onChange={setMarginY}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+            <NumberWithUnitInput
+              label="Horizontal Margin"
+              value={marginX}
+              onChange={setMarginX}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+          </Box>
           
-          <TextField
-            fullWidth
-            size="small"
-            label="Content (optional)"
-            value={innerContent}
-            onChange={(e) => setInnerContent(e.target.value)}
-            multiline
-            rows={3}
-            placeholder="Content inside table-flex container"
-          />
+          <Box>
+            <TextField
+              fullWidth
+              size="small"
+              label="Content (optional)"
+              value={innerContent}
+              onChange={(e) => setInnerContent(e.target.value)}
+              multiline
+              rows={3}
+              placeholder="Content inside table-flex container"
+            />
+            <Box sx={{ display: 'flex', gap: 1, mt: 1, flexWrap: 'wrap' }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Table size={14} />}
+                onClick={() => {
+                  const tableTemplate = `| Header 1 | Header 2 | Header 3 |
+|----------|---------|---------|
+| Cell 1   | Cell 2  | Cell 3  |
+| Cell 4   | Cell 5  | Cell 6  |`;
+                  setInnerContent(prev => prev + (prev ? '\n\n' : '') + tableTemplate);
+                }}
+                sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+              >
+                Add Table
+              </Button>
+            </Box>
+          </Box>
         </Box>
         
         <Divider orientation="vertical" flexItem />
         
-        <Box sx={{ flex: 1, minWidth: '300px' }}>
+        <Box sx={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <PreviewSection>
             {previewHtml}
           </PreviewSection>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleReset} color="secondary">Reset</Button>
+        <Tooltip title="Reset" arrow>
+          <IconButton onClick={handleReset} color="secondary">
+            <RotateCcw size={20} />
+          </IconButton>
+        </Tooltip>
         <Box sx={{ flex: 1 }} />
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleInsert} variant="contained">Insert</Button>
@@ -1054,11 +2365,15 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
   const [no, setNo] = useState('1');
   const [width, setWidth] = useState('6rem');
   const [color, setColor] = useState('#6b7280'); // gray-500
+  const [marginY, setMarginY] = useState('0');
+  const [marginX, setMarginX] = useState('0');
 
   const handleReset = () => {
     setNo('1');
     setWidth('6rem');
     setColor('#6b7280');
+    setMarginY('0');
+    setMarginX('0');
   };
 
   const handleInsert = () => {
@@ -1066,6 +2381,8 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
     if (no !== '1') params.push(`no="${no}"`);
     if (width !== '6rem') params.push(`width="${width}"`);
     if (color !== '#6b7280') params.push(`color="${color}"`);
+    if (marginY !== '0') params.push(`marginY="${marginY}"`);
+    if (marginX !== '0') params.push(`marginX="${marginX}"`);
 
     const shortcode = `{{< underscored-space${params.length > 0 ? ' ' + params.join(' ') : ''} >}}`;
     onInsert(shortcode);
@@ -1076,7 +2393,15 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
   // Generate preview HTML
   const count = parseInt(no) || 1;
   const previewHtml = (
-    <Box sx={{ alignSelf: 'flex-start' }}>
+    <Box 
+      sx={{ 
+        alignSelf: 'flex-start',
+        marginTop: marginY !== '0' ? marginY : undefined,
+        marginBottom: marginY !== '0' ? marginY : undefined,
+        marginLeft: marginX !== '0' ? marginX : undefined,
+        marginRight: marginX !== '0' ? marginX : undefined,
+      }}
+    >
       {Array.from({ length: count }).map((_, index) => (
         <span
           key={index}
@@ -1098,14 +2423,19 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { maxWidth: '900px', height: '80vh' } }}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">Underscored Space Shortcode</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6">Underscored Space</Typography>
+            <Tooltip title="Underscored Space is used to create multiple horizontal lines for spacing purposes." arrow>
+              <HelpCircle size={18} style={{ cursor: 'help', opacity: 0.7 }} />
+            </Tooltip>
+          </Box>
           <IconButton onClick={onClose} size="small">
             <X size={20} />
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1 }}>
+      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <TextField
             fullWidth
             size="small"
@@ -1129,18 +2459,39 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
             onChange={setColor}
             placeholder="#6b7280"
           />
+          
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <NumberWithUnitInput
+              label="Vertical Margin"
+              value={marginY}
+              onChange={setMarginY}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+            <NumberWithUnitInput
+              label="Horizontal Margin"
+              value={marginX}
+              onChange={setMarginX}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+          </Box>
         </Box>
         
         <Divider orientation="vertical" flexItem />
         
-        <Box sx={{ flex: 1, minWidth: '300px' }}>
+        <Box sx={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <PreviewSection>
             {previewHtml}
           </PreviewSection>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleReset} color="secondary">Reset</Button>
+        <Tooltip title="Reset" arrow>
+          <IconButton onClick={handleReset} color="secondary">
+            <RotateCcw size={20} />
+          </IconButton>
+        </Tooltip>
         <Box sx={{ flex: 1 }} />
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleInsert} variant="contained">Insert</Button>
@@ -1154,11 +2505,15 @@ const EmptyBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInser
   const [width, setWidth] = useState('5.5rem');
   const [height, setHeight] = useState('2.5rem');
   const [borderColor, setBorderColor] = useState('#3b82f6'); // main (blue-500)
+  const [marginY, setMarginY] = useState('0');
+  const [marginX, setMarginX] = useState('0');
 
   const handleReset = () => {
     setWidth('5.5rem');
     setHeight('2.5rem');
     setBorderColor('#3b82f6');
+    setMarginY('0');
+    setMarginX('0');
   };
 
   const handleInsert = () => {
@@ -1166,6 +2521,8 @@ const EmptyBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInser
     if (width !== '5.5rem') params.push(`width="${width}"`);
     if (height !== '2.5rem') params.push(`height="${height}"`);
     if (borderColor !== '#3b82f6') params.push(`borderColor="${borderColor}"`);
+    if (marginY !== '0') params.push(`marginY="${marginY}"`);
+    if (marginX !== '0') params.push(`marginX="${marginX}"`);
 
     const shortcode = `{{< empty-box${params.length > 0 ? ' ' + params.join(' ') : ''} >}}`;
     onInsert(shortcode);
@@ -1182,6 +2539,10 @@ const EmptyBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInser
         height: height,
         borderColor: borderColor,
         alignSelf: 'flex-start',
+        marginTop: marginY !== '0' ? marginY : undefined,
+        marginBottom: marginY !== '0' ? marginY : undefined,
+        marginLeft: marginX !== '0' ? marginX : undefined,
+        marginRight: marginX !== '0' ? marginX : undefined,
       }}
     />
   );
@@ -1190,14 +2551,19 @@ const EmptyBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInser
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth sx={{ '& .MuiDialog-paper': { maxWidth: '900px', height: '80vh' } }}>
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6">Empty Box Shortcode</Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6">Empty Box</Typography>
+            <Tooltip title="Empty Box is used to create empty placeholder boxes with customizable dimensions and border color." arrow>
+              <HelpCircle size={18} style={{ cursor: 'help', opacity: 0.7 }} />
+            </Tooltip>
+          </Box>
           <IconButton onClick={onClose} size="small">
             <X size={20} />
           </IconButton>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1 }}>
+      <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <NumberWithUnitInput
             label="Width"
             value={width}
@@ -1219,18 +2585,39 @@ const EmptyBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInser
             onChange={setBorderColor}
             placeholder="#3b82f6"
           />
+          
+          <Box sx={{ display: 'flex', gap: 1.5 }}>
+            <NumberWithUnitInput
+              label="Vertical Margin"
+              value={marginY}
+              onChange={setMarginY}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+            <NumberWithUnitInput
+              label="Horizontal Margin"
+              value={marginX}
+              onChange={setMarginX}
+              placeholder="0"
+              defaultUnit="rem"
+            />
+          </Box>
         </Box>
         
         <Divider orientation="vertical" flexItem />
         
-        <Box sx={{ flex: 1, minWidth: '300px' }}>
+        <Box sx={{ flex: 1, minWidth: '300px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <PreviewSection>
             {previewHtml}
           </PreviewSection>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleReset} color="secondary">Reset</Button>
+        <Tooltip title="Reset" arrow>
+          <IconButton onClick={handleReset} color="secondary">
+            <RotateCcw size={20} />
+          </IconButton>
+        </Tooltip>
         <Box sx={{ flex: 1 }} />
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleInsert} variant="contained">Insert</Button>
@@ -1273,9 +2660,6 @@ const ShortcodeToolbar: React.FC<ShortcodeToolbarProps> = ({ onInsert }) => {
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
         bgcolor: 'rgba(255, 255, 255, 0.02)',
       }}>
-        <Typography variant="body2" sx={{ width: '100%', mb: 1, color: 'text.secondary', fontWeight: 600 }}>
-          Shortcodes
-        </Typography>
         {shortcodes.map((shortcode) => {
           const Icon = shortcode.icon;
           return (
