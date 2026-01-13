@@ -38,7 +38,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 // Helper function to parse shortcode syntax and render preview components
-const parseAndRenderShortcodes = (content: string): React.ReactNode => {
+export const parseAndRenderShortcodes = (content: string): React.ReactNode => {
   if (!content || content.trim() === '') return null;
 
   // Parse shortcode patterns: {{< shortcode-name params >}} or {{< shortcode-name >}}
@@ -99,7 +99,7 @@ const parseAndRenderShortcodes = (content: string): React.ReactNode => {
       
       case 'empty-box':
         parts.push(
-          <div
+          <span
             key={`shortcode-${match.index}`}
             className="inline-flex border rounded-sm"
             style={{
@@ -119,10 +119,10 @@ const parseAndRenderShortcodes = (content: string): React.ReactNode => {
       case 'content-box':
         if (params.type === 'heading') {
           parts.push(
-            <div key={`shortcode-${match.index}`} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: params.flex || undefined }}>
-              <div
+            <span key={`shortcode-${match.index}`} style={{ display: 'inline-flex', justifyContent: 'center', alignItems: 'center', flex: params.flex || undefined }}>
+              <span
                 style={{
-                  display: 'flex',
+                  display: 'inline-flex',
                   paddingLeft: '1rem',
                   paddingRight: '1rem',
                   border: `1px solid ${params.borderColor || '#3b82f6'}`,
@@ -135,13 +135,29 @@ const parseAndRenderShortcodes = (content: string): React.ReactNode => {
                   color: params.textColor || undefined,
                 }}
               >
-                {params.heading ? <ReactMarkdown>{params.heading}</ReactMarkdown> : (params.content ? <ReactMarkdown>{params.content}</ReactMarkdown> : 'Content')}
-              </div>
-            </div>
+                {params.heading ? (
+                  <ReactMarkdown 
+                    components={{
+                      p: ({ children }) => <span>{children}</span>,
+                    }}
+                  >
+                    {params.heading}
+                  </ReactMarkdown>
+                ) : (params.content ? (
+                  <ReactMarkdown
+                    components={{
+                      p: ({ children }) => <span>{children}</span>,
+                    }}
+                  >
+                    {params.content}
+                  </ReactMarkdown>
+                ) : 'Content')}
+              </span>
+            </span>
           );
         } else {
           parts.push(
-            <div
+            <span
               key={`shortcode-${match.index}`}
               style={{
                 display: 'inline-flex',
@@ -162,8 +178,16 @@ const parseAndRenderShortcodes = (content: string): React.ReactNode => {
                 flex: params.flex || undefined,
               }}
             >
-              {params.content ? <ReactMarkdown>{params.content}</ReactMarkdown> : 'Content'}
-            </div>
+              {params.content ? (
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => <span>{children}</span>,
+                  }}
+                >
+                  {params.content}
+                </ReactMarkdown>
+              ) : 'Content'}
+            </span>
           );
         }
         break;
@@ -185,9 +209,10 @@ const parseAndRenderShortcodes = (content: string): React.ReactNode => {
           />
         ));
         parts.push(
-          <Box 
+          <span 
             key={`shortcode-${match.index}`}
-            sx={{ 
+            style={{ 
+              display: 'inline-block',
               marginTop: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
               marginBottom: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
               marginLeft: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
@@ -195,7 +220,7 @@ const parseAndRenderShortcodes = (content: string): React.ReactNode => {
             }}
           >
             {spaces}
-          </Box>
+          </span>
         );
         break;
       
@@ -746,7 +771,23 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
           color: textColor || undefined,
         }}
       >
-        {heading ? <ReactMarkdown>{heading}</ReactMarkdown> : (content ? <ReactMarkdown>{content}</ReactMarkdown> : <span style={{ opacity: 0.5 }}>Preview heading</span>)}
+        {heading ? (
+          <ReactMarkdown
+            components={{
+              p: ({ children }) => <span>{children}</span>,
+            }}
+          >
+            {heading}
+          </ReactMarkdown>
+        ) : (content ? (
+          <ReactMarkdown
+            components={{
+              p: ({ children }) => <span>{children}</span>,
+            }}
+          >
+            {content}
+          </ReactMarkdown>
+        ) : <span style={{ opacity: 0.5 }}>Preview heading</span>)}
       </div>
     </div>
   ) : (
@@ -770,7 +811,15 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
         alignSelf: 'flex-start',
       }}
     >
-      {content ? <ReactMarkdown>{content}</ReactMarkdown> : <span style={{ opacity: 0.5 }}>content</span>}
+      {content ? (
+        <ReactMarkdown
+          components={{
+            p: ({ children }) => <span>{children}</span>,
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      ) : <span style={{ opacity: 0.5 }}>content</span>}
     </div>
   );
 
@@ -1153,7 +1202,8 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
     if (justifyContent !== 'start') params.push(`justifyContent="${justifyContent}"`);
     if (alignItems !== 'start') params.push(`alignItems="${alignItems}"`);
     if (alignContent !== 'start') params.push(`alignContent="${alignContent}"`);
-    if (gap !== '1rem') params.push(`gap="${gap}"`);
+    // Always include gap to ensure it's applied
+    params.push(`gap="${gap}"`);
     if (marginY !== '0') params.push(`marginY="${marginY}"`);
     if (marginX !== '0') params.push(`marginX="${marginX}"`);
     
@@ -1170,8 +1220,8 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
       : (innerContent || '\n  Your content here\n');
 
       const content = processedContent
-      ? `\n${processedContent.trim()}\n`
-      : `\n  Your content here\n`;
+      ? `\n\n${processedContent.trim()}\n\n`
+      : `\n\n  Your content here\n\n`;
     
     const shortcode = `{{< flex${params.length > 0 ? ' ' + params.join(' ') : ''} >}}${content}{{< /flex >}}`;
     

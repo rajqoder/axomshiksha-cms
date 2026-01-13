@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Box } from '@mui/material';
+import { parseAndRenderShortcodes } from './ShortcodeToolbar';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // Dynamically import the markdown editor to avoid SSR issues
 const MdEditor = dynamic(
@@ -20,6 +23,62 @@ interface MarkdownEditorProps {
 export interface MarkdownEditorRef {
   insertText: (text: string) => void;
 }
+
+// Helper function to process children and render shortcodes
+const processChildrenForShortcodes = (
+  children: any,
+  renderWithProcessed: (processed: React.ReactNode) => React.ReactElement,
+  fallback: React.ReactElement
+): React.ReactElement => {
+  if (typeof children === 'string') {
+    const rendered = parseAndRenderShortcodes(children);
+    if (rendered) {
+      return renderWithProcessed(rendered);
+    }
+  } else if (Array.isArray(children)) {
+    // Check if any child contains shortcode syntax
+    const hasShortcodes = children.some(
+      (child) => typeof child === 'string' && /\{\{<[\s\S]*?>\}\}/.test(child)
+    );
+    
+    if (hasShortcodes) {
+      // Process all children and combine text nodes
+      const processedChildren: React.ReactNode[] = [];
+      let textBuffer = '';
+      
+      children.forEach((child, idx) => {
+        if (typeof child === 'string') {
+          textBuffer += child;
+        } else {
+          // Process accumulated text before non-text child
+          if (textBuffer) {
+            const rendered = parseAndRenderShortcodes(textBuffer);
+            if (rendered) {
+              processedChildren.push(rendered);
+            } else {
+              processedChildren.push(textBuffer);
+            }
+            textBuffer = '';
+          }
+          processedChildren.push(child);
+        }
+      });
+      
+      // Process any remaining text
+      if (textBuffer) {
+        const rendered = parseAndRenderShortcodes(textBuffer);
+        if (rendered) {
+          processedChildren.push(rendered);
+        } else {
+          processedChildren.push(textBuffer);
+        }
+      }
+      
+      return renderWithProcessed(processedChildren);
+    }
+  }
+  return fallback;
+};
 
 const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ value, onChange }, ref) => {
   useImperativeHandle(ref, () => ({
@@ -384,6 +443,26 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ val
         height="100%"
         visibleDragbar={false}
         data-color-mode="dark"
+        previewOptions={{
+          components: {
+            // Process shortcodes in paragraph content
+            p: ({ children, ...props }: any) => {
+              return processChildrenForShortcodes(children, (processed) => <p {...props}>{processed}</p>, <p {...props}>{children}</p>);
+            },
+            // Handle shortcodes in list items
+            li: ({ children, ...props }: any) => {
+              return processChildrenForShortcodes(children, (processed) => <li {...props}>{processed}</li>, <li {...props}>{children}</li>);
+            },
+            // Handle shortcodes in other text elements
+            strong: ({ children, ...props }: any) => {
+              return processChildrenForShortcodes(children, (processed) => <strong {...props}>{processed}</strong>, <strong {...props}>{children}</strong>);
+            },
+            em: ({ children, ...props }: any) => {
+              return processChildrenForShortcodes(children, (processed) => <em {...props}>{processed}</em>, <em {...props}>{children}</em>);
+            },
+          },
+          remarkPlugins: [remarkGfm],
+        }}
       />
     </Box>
   );
