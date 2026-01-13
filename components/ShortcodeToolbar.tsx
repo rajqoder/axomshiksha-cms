@@ -284,10 +284,9 @@ const renderMarkdownTables = (markdown: string) => {
         <Box
           key={idx}
           sx={{
-            width: '100%',
+            display: 'inline-block',
             alignSelf: 'flex-start',
             '& table': {
-              width: '100%',
               borderCollapse: 'collapse',
             },
             '& th, & td': {
