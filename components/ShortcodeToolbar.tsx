@@ -839,7 +839,7 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <FormControl fullWidth size="small">
             <InputLabel>Type</InputLabel>
             <Select value={type} onChange={(e) => setType(e.target.value)} label="Type">
@@ -886,7 +886,7 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
             placeholder="#3b82f6"
           />
           
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <NumberWithUnitInput
               label="Width"
               value={width}
@@ -904,7 +904,7 @@ const ContentBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onIns
             />
           </Box>
           
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <NumberWithUnitInput
               label="Vertical Margin"
               value={marginY}
@@ -1022,7 +1022,7 @@ const LineDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <NumberWithUnitInput
             label="Width"
             value={width}
@@ -1437,7 +1437,7 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <FormControl fullWidth size="small">
             <InputLabel>Direction</InputLabel>
             <Select value={direction} onChange={(e) => setDirection(e.target.value)} label="Direction">
@@ -1486,7 +1486,7 @@ const FlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInsert })
             defaultUnit="rem"
           />
           
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <NumberWithUnitInput
               label="Vertical Margin"
               value={marginY}
@@ -1782,7 +1782,7 @@ const TableFlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInse
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <FormControl fullWidth size="small">
             <InputLabel>Direction</InputLabel>
             <Select value={direction} onChange={(e) => setDirection(e.target.value)} label="Direction">
@@ -1839,7 +1839,7 @@ const TableFlexDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInse
             </Select>
           </FormControl>
           
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <NumberWithUnitInput
               label="Vertical Margin"
               value={marginY}
@@ -1984,7 +1984,7 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <TextField
             fullWidth
             size="small"
@@ -2009,7 +2009,7 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
             placeholder="#6b7280"
           />
           
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <NumberWithUnitInput
               label="Vertical Margin"
               value={marginY}
@@ -2112,7 +2112,7 @@ const EmptyBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInser
         </Box>
       </DialogTitle>
       <DialogContent sx={{ display: 'flex', gap: 2, mt: 1, overflow: 'hidden', pb: 1, flex: 1, minHeight: 0 }}>
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, overflow: 'auto', pr: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'auto', pr: 1, minWidth: 0 }}>
           <NumberWithUnitInput
             label="Width"
             value={width}
@@ -2135,7 +2135,7 @@ const EmptyBoxDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose, onInser
             placeholder="#3b82f6"
           />
           
-          <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <NumberWithUnitInput
               label="Vertical Margin"
               value={marginY}
