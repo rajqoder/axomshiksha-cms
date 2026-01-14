@@ -1,10 +1,9 @@
 'use client';
 
-import React, { useEffect, useImperativeHandle, forwardRef, useMemo } from 'react';
+import React, { useEffect, useImperativeHandle, forwardRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Box } from '@mui/material';
 import { parseAndRenderShortcodes } from './ShortcodeToolbar';
-import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 // Dynamically import the markdown editor to avoid SSR issues
@@ -24,63 +23,73 @@ export interface MarkdownEditorRef {
   insertText: (text: string) => void;
 }
 
-// Helper function to process children and render shortcodes
+// Track flex depth across preview rendering so we can avoid parsing
+// child shortcodes inside flex blocks.
+let previewFlexDepth = 0;
+
+// Helper to process children and render shortcodes, while skipping
+// shortcode rendering when we're inside a flex block.
 const processChildrenForShortcodes = (
   children: any,
   renderWithProcessed: (processed: React.ReactNode) => React.ReactElement,
   fallback: React.ReactElement
 ): React.ReactElement => {
+  const processTextSegment = (text: string): React.ReactNode => {
+    if (!text) return text;
+
+    const hasShortcodes = /\{\{<[\s\S]*?>\}\}/.test(text);
+    const hasFlexStart = /\{\{<\s*flex([^>]*?)\s*>\}\}/.test(text);
+    const hasFlexEnd = /\{\{<\s*\/flex\s*>\}\}/.test(text);
+
+    const insideFlex = previewFlexDepth > 0 || hasFlexStart;
+
+    // Update depth after computing insideFlex for this segment
+    if (hasFlexStart) previewFlexDepth += 1;
+    if (hasFlexEnd) previewFlexDepth = Math.max(0, previewFlexDepth - 1);
+
+    // If no shortcodes or we're inside a flex block, return raw text with preserved line breaks
+    if (!hasShortcodes || insideFlex) {
+      // Wrap in a span with pre-wrap to preserve line breaks
+      return (
+        <span style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.875rem' }}>
+          {text}
+        </span>
+      );
+    }
+
+    const rendered = parseAndRenderShortcodes(text);
+    return rendered || text;
+  };
+
   if (typeof children === 'string') {
-    const rendered = parseAndRenderShortcodes(children);
-    if (rendered) {
-      return renderWithProcessed(rendered);
+    const hasShortcodes = /\{\{<[\s\S]*?>\}\}/.test(children);
+    if (!hasShortcodes) {
+      return fallback;
+    }
+
+    const processed = processTextSegment(children);
+    if (processed !== children) {
+      return renderWithProcessed(processed);
     }
   } else if (Array.isArray(children)) {
-    // Check if any child contains shortcode syntax
     const hasShortcodes = children.some(
       (child) => typeof child === 'string' && /\{\{<[\s\S]*?>\}\}/.test(child)
     );
-    
+
     if (hasShortcodes) {
-      // Process all children and combine text nodes
-      const processedChildren: React.ReactNode[] = [];
-      let textBuffer = '';
-      
-      children.forEach((child, idx) => {
-        if (typeof child === 'string') {
-          textBuffer += child;
-        } else {
-          // Process accumulated text before non-text child
-          if (textBuffer) {
-            const rendered = parseAndRenderShortcodes(textBuffer);
-            if (rendered) {
-              processedChildren.push(rendered);
-            } else {
-              processedChildren.push(textBuffer);
-            }
-            textBuffer = '';
-          }
-          processedChildren.push(child);
-        }
-      });
-      
-      // Process any remaining text
-      if (textBuffer) {
-        const rendered = parseAndRenderShortcodes(textBuffer);
-        if (rendered) {
-          processedChildren.push(rendered);
-        } else {
-          processedChildren.push(textBuffer);
-        }
-      }
-      
+      const processedChildren = children.map((child) =>
+        typeof child === 'string' ? processTextSegment(child) : child
+      );
       return renderWithProcessed(processedChildren);
     }
   }
+
   return fallback;
 };
 
 const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ value, onChange }, ref) => {
+  // Reset flex depth for each render cycle of the editor preview
+  previewFlexDepth = 0;
   useImperativeHandle(ref, () => ({
     insertText: (text: string) => {
       // Try to find the textarea element
