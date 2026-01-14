@@ -211,13 +211,6 @@ export const parseAndRenderShortcodes = (content: string): React.ReactNode => {
         parts.push(
           <span 
             key={`shortcode-${match.index}`}
-            style={{ 
-              display: 'inline-block',
-              marginTop: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
-              marginBottom: params.marginY && params.marginY !== '0' ? params.marginY : undefined,
-              marginLeft: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
-              marginRight: params.marginX && params.marginX !== '0' ? params.marginX : undefined,
-            }}
           >
             {spaces}
           </span>
@@ -1914,15 +1907,11 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
   const [no, setNo] = useState('1');
   const [width, setWidth] = useState('6rem');
   const [color, setColor] = useState('#6b7280'); // gray-500
-  const [marginY, setMarginY] = useState('0');
-  const [marginX, setMarginX] = useState('0');
 
   const handleReset = () => {
     setNo('1');
     setWidth('6rem');
     setColor('#6b7280');
-    setMarginY('0');
-    setMarginX('0');
   };
 
   const handleInsert = () => {
@@ -1930,8 +1919,6 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
     if (no !== '1') params.push(`no="${no}"`);
     if (width !== '6rem') params.push(`width="${width}"`);
     if (color !== '#6b7280') params.push(`color="${color}"`);
-    if (marginY !== '0') params.push(`marginY="${marginY}"`);
-    if (marginX !== '0') params.push(`marginX="${marginX}"`);
 
     const shortcode = `{{< underscored-space${params.length > 0 ? ' ' + params.join(' ') : ''} >}}`;
     onInsert(shortcode);
@@ -1942,15 +1929,7 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
   // Generate preview HTML
   const count = parseInt(no) || 1;
   const previewHtml = (
-    <Box 
-      sx={{ 
-        alignSelf: 'flex-start',
-        marginTop: marginY !== '0' ? marginY : undefined,
-        marginBottom: marginY !== '0' ? marginY : undefined,
-        marginLeft: marginX !== '0' ? marginX : undefined,
-        marginRight: marginX !== '0' ? marginX : undefined,
-      }}
-    >
+    <span>
       {Array.from({ length: count }).map((_, index) => (
         <span
           key={index}
@@ -1965,7 +1944,7 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
           }}
         />
       ))}
-    </Box>
+    </span>
   );
 
   return (
@@ -2008,23 +1987,6 @@ const UnderscoredSpaceDialog: React.FC<ShortcodeDialogProps> = ({ open, onClose,
             onChange={setColor}
             placeholder="#6b7280"
           />
-          
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <NumberWithUnitInput
-              label="Vertical Margin"
-              value={marginY}
-              onChange={setMarginY}
-              placeholder="0"
-              defaultUnit="rem"
-            />
-            <NumberWithUnitInput
-              label="Horizontal Margin"
-              value={marginX}
-              onChange={setMarginX}
-              placeholder="0"
-              defaultUnit="rem"
-            />
-          </Box>
         </Box>
         
         <Divider orientation="vertical" flexItem />
