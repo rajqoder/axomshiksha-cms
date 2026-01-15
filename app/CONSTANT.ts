@@ -48,6 +48,7 @@ export const TAGS = [
     "asseb",
     "evs",
     "gk",
+    "grammar",
     "music",
     "dance",
     "mil",
