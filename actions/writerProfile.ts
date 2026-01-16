@@ -13,7 +13,6 @@ export interface SocialLink {
 }
 
 export interface WriterProfile {
-    username: string; // The key in the JSON, also the email prefix
     name: string;
     bio: string;
     joinedon: string;
@@ -74,7 +73,6 @@ export async function getWriterProfile(): Promise<{ success: boolean; data?: Wri
             return {
                 success: true,
                 data: {
-                    username,
                     name: user.user_metadata?.display_name || '',
                     bio: '',
                     joinedon: new Date().toISOString().split('T')[0],
@@ -100,11 +98,6 @@ export async function updateWriterProfile(profileData: WriterProfile): Promise<{
         }
 
         const username = user.email.split('@')[0];
-
-        // Ensure the user is updating their own profile
-        if (username !== profileData.username) {
-            return { success: false, message: 'Unauthorized: You can only update your own profile' };
-        }
 
         const octokit = new Octokit({
             auth: process.env.GITHUB_TOKEN,
@@ -135,11 +128,11 @@ export async function updateWriterProfile(profileData: WriterProfile): Promise<{
             }
         }
 
-        // 2. Update the specific user's data
-        // We preserve existing fields if not overwritten, but here we replace the object mostly
+        const { ...dataToSave } = profileData;
+        
         currentData[username] = {
-            ...currentData[username], // Keep existing fields if any (in case schema expands)
-            ...profileData,
+            ...currentData[username], // Keep existing fields if any
+            ...dataToSave,
             email: user.email, // Ensure email is consistent
         };
 

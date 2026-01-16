@@ -39,7 +39,6 @@ const ProfilePage = () => {
   const [success, setSuccess] = useState<string | null>(null);
 
   const [profile, setProfile] = useState<WriterProfile>({
-    username: '',
     name: '',
     bio: '',
     joinedon: '',
@@ -167,6 +166,15 @@ const ProfilePage = () => {
               <Box>
                 <Typography variant="h6" gutterBottom>Personal Information</Typography>
                 <Grid container spacing={2}>
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      label="Username"
+                      value={user!.email!.split('@')[0]}
+                      disabled
+                      helperText="Username cannot be changed"
+                    />
+                  </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth

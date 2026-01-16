@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm, useWatch } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 import {
   Box,
   Button,
@@ -20,6 +21,11 @@ import {
   CardContent,
   Typography,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material';
 import TagSelector from '@/components/TagSelector';
 import KeywordsInput from '@/components/KeywordsInput';
@@ -27,6 +33,7 @@ import { CATEGORIES, CATEGORY_MAP } from '../CONSTANT';
 import MarkdownEditor, { MarkdownEditorRef } from '@/components/MarkdownEditor';
 import ShortcodeToolbar from '@/components/ShortcodeToolbar';
 import { FileText, Save, Send, Info, BookOpen } from 'lucide-react';
+import { getWriterProfile } from '../../actions/writerProfile';
 
 interface FormData {
   title: string;
@@ -43,6 +50,7 @@ interface FormData {
 }
 
 const NewPostPage = () => {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -76,7 +84,33 @@ const NewPostPage = () => {
   const [snackbarSeverity, setSnackbarSeverity] = React.useState<'success' | 'error'>('success');
   const markdownEditorRef = React.useRef<MarkdownEditorRef>(null);
 
+  /* Removed showBioWarning and checkingProfile from here */
+  const [showBioWarning, setShowBioWarning] = useState(false);
+  const [hasBio, setHasBio] = useState(false);
+
+  useEffect(() => {
+    const checkUserProfile = async () => {
+      try {
+        const result = await getWriterProfile();
+        if (result.success && result.data) {
+          if (result.data.bio && result.data.bio.trim() !== '') {
+            setHasBio(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking user profile:', error);
+      }
+    };
+
+    checkUserProfile();
+  }, []);
+
   const onSubmit = async (data: FormData) => {
+    if (data.published && !hasBio) {
+      setShowBioWarning(true);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Dynamically import the server action
@@ -108,19 +142,44 @@ const NewPostPage = () => {
   };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      bgcolor: 'background.default', 
-      pt: 10, 
-      pb: 4, 
-      px: { xs: 2, sm: 3, md: 4 } 
+    <Box sx={{
+      minHeight: '100vh',
+      bgcolor: 'background.default',
+      pt: 10,
+      pb: 4,
+      px: { xs: 2, sm: 3, md: 4 }
     }}>
+      {/* Bio Warning Dialog */}
+      <Dialog
+        open={showBioWarning}
+        disableEscapeKeyDown
+        aria-labelledby="bio-warning-title"
+        aria-describedby="bio-warning-description"
+      >
+        <DialogTitle id="bio-warning-title">
+          {"Incomplete Profile"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="bio-warning-description">
+            Please complete your bio in the profile section before creating a new post. A bio is required for all authors to ensure quality and transparency.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowBioWarning(false)} color="inherit">
+            Cancel
+          </Button>
+          <Button onClick={() => router.push('/profile')} autoFocus variant="contained">
+            Go to Profile
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Box sx={{ maxWidth: '1600px', mx: 'auto' }}>
         {/* Header */}
         <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Typography 
-            variant="h4" 
-            sx={{ 
+          <Typography
+            variant="h4"
+            sx={{
               fontWeight: 700,
               fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.5rem' },
               background: 'linear-gradient(45deg, #60a5fa, #3b82f6)',
@@ -143,7 +202,7 @@ const NewPostPage = () => {
             <Box sx={{ flex: { xs: 1, lg: 8 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
               {/* Guidelines Cards */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Card sx={{ 
+                <Card sx={{
                   background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(30, 30, 30, 0.8) 100%)',
                   border: '1px solid rgba(96, 165, 250, 0.2)',
                   borderRadius: 3,
@@ -166,7 +225,7 @@ const NewPostPage = () => {
                   </CardContent>
                 </Card>
 
-                <Card sx={{ 
+                <Card sx={{
                   background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(30, 30, 30, 0.8) 100%)',
                   border: '1px solid rgba(96, 165, 250, 0.2)',
                   borderRadius: 3,
@@ -192,9 +251,9 @@ const NewPostPage = () => {
                   </CardContent>
                 </Card>
               </Box>
-              
+
               {/* Markdown Editor */}
-              <Card sx={{ 
+              <Card sx={{
                 flex: 1,
                 background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(30, 30, 30, 0.9) 100%)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -232,7 +291,7 @@ const NewPostPage = () => {
 
             {/* Sidebar */}
             <Box sx={{ flex: { xs: 1, lg: 4 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Card sx={{ 
+              <Card sx={{
                 background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(30, 30, 30, 0.9) 100%)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: 3,
@@ -243,9 +302,9 @@ const NewPostPage = () => {
                 display: 'flex',
                 flexDirection: 'column'
               }}>
-                <CardContent sx={{ 
-                  flex: 1, 
-                  overflow: 'auto', 
+                <CardContent sx={{
+                  flex: 1,
+                  overflow: 'auto',
                   p: 3,
                   '&::-webkit-scrollbar': {
                     width: '8px',
@@ -261,7 +320,7 @@ const NewPostPage = () => {
                       Post Details
                     </Typography>
                   </Box>
-                  
+
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <TextField
                       fullWidth
@@ -279,7 +338,7 @@ const NewPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <TextField
                       fullWidth
                       label="Slug"
@@ -296,7 +355,7 @@ const NewPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <TextField
                       fullWidth
                       label="Description"
@@ -313,7 +372,7 @@ const NewPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <FormControl fullWidth>
                       <InputLabel>Category</InputLabel>
                       <Controller
@@ -339,7 +398,7 @@ const NewPostPage = () => {
                         )}
                       />
                     </FormControl>
-                    
+
                     <Controller
                       name="tags"
                       control={control}
@@ -351,7 +410,7 @@ const NewPostPage = () => {
                         />
                       )}
                     />
-                    
+
                     <TextField
                       fullWidth
                       label="Reading Time (minutes)"
@@ -367,7 +426,7 @@ const NewPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <TextField
                       fullWidth
                       label="Thumbnail URL"
@@ -382,9 +441,9 @@ const NewPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <Divider sx={{ my: 1 }} />
-                    
+
                     <Controller
                       name="useTagsAsKeywords"
                       control={control}
@@ -395,7 +454,7 @@ const NewPostPage = () => {
                         />
                       )}
                     />
-                    
+
                     {!useTagsAsKeywords && (
                       <Controller
                         name="keywords"
@@ -411,7 +470,7 @@ const NewPostPage = () => {
                     )}
                   </Box>
                 </CardContent>
-                
+
                 <Box sx={{ p: 3, pt: 0, borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                   <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
                     <Button
@@ -420,9 +479,9 @@ const NewPostPage = () => {
                       size="large"
                       fullWidth
                       disabled={isSubmitting}
-                      onClick={() => handleSubmit((data) => onSubmit({...data, published: false}))()}
+                      onClick={() => handleSubmit((data) => onSubmit({ ...data, published: false }))()}
                       startIcon={<Save size={18} />}
-                      sx={{ 
+                      sx={{
                         textTransform: 'none',
                         fontWeight: 600,
                         background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
@@ -441,9 +500,9 @@ const NewPostPage = () => {
                       size="large"
                       fullWidth
                       disabled={isSubmitting}
-                      onClick={() => handleSubmit((data) => onSubmit({...data, published: true}))()}
+                      onClick={() => handleSubmit((data) => onSubmit({ ...data, published: true }))()}
                       startIcon={<Send size={18} />}
-                      sx={{ 
+                      sx={{
                         textTransform: 'none',
                         fontWeight: 600,
                         background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
@@ -462,7 +521,7 @@ const NewPostPage = () => {
             </Box>
           </Box>
         </form>
-        
+
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={6000}
