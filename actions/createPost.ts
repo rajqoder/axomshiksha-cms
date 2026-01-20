@@ -1,6 +1,41 @@
 'use server';
 
-import { saveFileContent, getAuthenticatedUser } from './cms/fileSystem';
+import { saveFileContent, getAuthenticatedUser, getFileContent } from './cms/fileSystem';
+
+// Helper: Slugify string
+function slugify(text: string) {
+  return text.toString().toLowerCase()
+    .replace(/\s+/g, '-')           // Replace spaces with -
+    .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+    .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+    .replace(/^-+/, '')             // Trim - from start of text
+    .replace(/-+$/, '');            // Trim - from end of text
+}
+
+// Helper: Unslugify string (e.g. social-science -> Social Science)
+function unslugify(slug: string) {
+  return slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+// Helper: Ensure _index.md exists using provided title
+async function ensureIndexFile(folderPath: string, title: string, dateString: string) {
+  const indexPath = `${folderPath}/_index.md`;
+  try {
+    const existing = await getFileContent(indexPath);
+    if (!existing) {
+      const content = `+++
+title = "${title}"
+draft = false
+date = ${dateString}
++++
+`;
+      // We don't want to fail the whole request if this fails, so catching inside
+      await saveFileContent(indexPath, content, `Create index for ${title}`);
+    }
+  } catch (err) {
+    console.error(`Failed to ensure index file for ${folderPath}:`, err);
+  }
+}
 
 interface FormData {
   title: string;
@@ -28,26 +63,44 @@ export async function createPost(formData: FormData) {
     const cleanSlug = formData.slug.replace(/\.md$/, '');
     const fileName = `${cleanSlug}.md`;
 
+    // Date Format
+    const currentDate = new Date();
+    const dateString = currentDate.toISOString().split(".")[0]+"+05:30";
+
     let filePath = '';
 
     // Check if this is an academic post with full taxonomy
-    if (formData.class && formData.subject && formData.medium) {
-      // Pattern: content/<class>/<subject>/<medium>-medium/<slug>.md
-      const mediumFolder = formData.medium.endsWith('-medium') ? formData.medium : `${formData.medium}-medium`;
-      filePath = `content/${formData.class}/${formData.subject}/${mediumFolder}/${fileName}`;
+    if (formData.class && formData.subject) {
+      // Slugify Class and Subject for Folders
+      const classSlug = slugify(formData.class);
+      // Ensure subject is slugified (lowercase, hyphens)
+      const subjectSlug = slugify(formData.subject);
+
+      // Ensure directory indices exist
+      // 1. Class Folder Index
+      await ensureIndexFile(`content/${classSlug}`, unslugify(classSlug), dateString);
+
+      // 2. Subject Folder Index
+      await ensureIndexFile(`content/${classSlug}/${subjectSlug}`, unslugify(subjectSlug), dateString);
+
+      // Construct Path
+      let folderPath = `content/${classSlug}/${subjectSlug}`;
+
+      if (formData.medium) {
+        // Medium folder if present
+        const mediumFolder = formData.medium.endsWith('-medium') ? formData.medium : `${formData.medium}-medium`;
+        folderPath += `/${mediumFolder}`;
+      }
+
+      filePath = `${folderPath}/${fileName}`;
     } else {
       // Fallback for generic posts
-      // You might want to use formData.category if available, otherwise 'posts'
       const folder = formData.category ? formData.category.toLowerCase().replace(/\s+/g, '-') : 'posts';
       filePath = `content/${folder}/${fileName}`;
     }
 
     // Determine keywords
     const keywords = formData.keywords || [];
-
-    // Date Format
-    const currentDate = new Date();
-    const dateString = currentDate.toISOString();
 
     // Build Frontmatter
     const keywordsString = JSON.stringify(keywords);
@@ -56,7 +109,7 @@ export async function createPost(formData: FormData) {
     let frontmatter = `+++
 title = "${formData.title}"
 draft = ${!formData.published}
-date = ${dateString}
+date = "${dateString}"
 readingTime = "${formData.readingTime} mins"
 description = "${formData.description}"
 keywords = ${keywordsString}

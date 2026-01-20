@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import {
   Box,
   Button,
@@ -11,18 +11,13 @@ import {
   Select,
   MenuItem,
   Typography,
-  Paper,
-  Checkbox,
-  FormControlLabel,
   Snackbar,
   Alert,
-  AlertTitle,
   Card,
   CardContent,
   Divider,
   CircularProgress,
 } from '@mui/material';
-import TagSelector from '@/components/TagSelector';
 import KeywordsInput from '@/components/KeywordsInput';
 import { CATEGORIES, CATEGORY_MAP } from '../../../CONSTANT';
 import { useParams } from 'next/navigation';
@@ -37,12 +32,11 @@ interface FormData {
   slug: string;
   description: string;
   category: string;
-  tags: string[];
+
   content: string;
   published: boolean;
   readingTime: number;
   thumbnail: string;
-  useTagsAsKeywords: boolean;
   keywords: string[];
 }
 
@@ -60,33 +54,26 @@ const EditPostPage = () => {
     setValue,
   } = useForm<FormData>();
 
-  const useTagsAsKeywords = useWatch({
-    control,
-    name: 'useTagsAsKeywords',
-  });
-
   useEffect(() => {
     const loadPost = async () => {
       if (filename) {
         const slugValue = Array.isArray(filename) ? filename[0] : filename;
         const postData = await fetchPostBySlug(slugValue);
-        
+
         if (postData) {
           // Set initial values for the form, converting types as needed
           const formData: FormData = {
             title: postData.title,
             slug: postData.slug,
             description: postData.description,
-            category: typeof postData.category === 'string' ? postData.category : (postData.category[0] || ''),
-            tags: postData.tags,
+            category: postData.category,
             content: postData.content,
             published: postData.published,
             readingTime: typeof postData.readingTime === 'number' ? postData.readingTime : parseInt(postData.readingTime) || 5,
             thumbnail: postData.thumbnail,
-            useTagsAsKeywords: false, // Default to false as in the new post page
             keywords: Array.isArray(postData.keywords) ? postData.keywords : (typeof postData.keywords === 'string' ? [postData.keywords] : []),
           };
-          
+
           setInitialData(formData);
           reset(formData); // Set the form values
         }
@@ -135,11 +122,11 @@ const EditPostPage = () => {
 
   if (loading) {
     return (
-      <Box sx={{ 
-        minHeight: '100vh', 
-        bgcolor: 'background.default', 
-        display: 'flex', 
-        alignItems: 'center', 
+      <Box sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        display: 'flex',
+        alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column',
         gap: 2
@@ -154,11 +141,11 @@ const EditPostPage = () => {
 
   if (!initialData) {
     return (
-      <Box sx={{ 
-        minHeight: '100vh', 
-        bgcolor: 'background.default', 
-        pt: 10, 
-        pb: 4, 
+      <Box sx={{
+        minHeight: '100vh',
+        bgcolor: 'background.default',
+        pt: 10,
+        pb: 4,
         px: { xs: 2, sm: 3, md: 4 },
         display: 'flex',
         flexDirection: 'column',
@@ -169,9 +156,9 @@ const EditPostPage = () => {
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
           Post not found
         </Typography>
-        <Button 
-          variant="contained" 
-          component={Link} 
+        <Button
+          variant="contained"
+          component={Link}
           href="/posts"
           startIcon={<ArrowLeft size={18} />}
           sx={{
@@ -186,12 +173,12 @@ const EditPostPage = () => {
   }
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      bgcolor: 'background.default', 
-      pt: 10, 
-      pb: 4, 
-      px: { xs: 2, sm: 3, md: 4 } 
+    <Box sx={{
+      minHeight: '100vh',
+      bgcolor: 'background.default',
+      pt: 10,
+      pb: 4,
+      px: { xs: 2, sm: 3, md: 4 }
     }}>
       <Box sx={{ maxWidth: '1600px', mx: 'auto' }}>
         {/* Header */}
@@ -200,7 +187,7 @@ const EditPostPage = () => {
             component={Link}
             href="/posts"
             startIcon={<ArrowLeft size={18} />}
-            sx={{ 
+            sx={{
               mb: 2,
               textTransform: 'none',
               color: 'text.secondary',
@@ -212,9 +199,9 @@ const EditPostPage = () => {
             Back to Posts
           </Button>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ 
-              width: 48, 
-              height: 48, 
+            <Box sx={{
+              width: 48,
+              height: 48,
               borderRadius: 2,
               background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
               display: 'flex',
@@ -225,9 +212,9 @@ const EditPostPage = () => {
               <Edit size={24} color="white" />
             </Box>
             <Box>
-              <Typography 
-                variant="h4" 
-                sx={{ 
+              <Typography
+                variant="h4"
+                sx={{
                   fontWeight: 700,
                   fontSize: { xs: '1.8rem', sm: '2.2rem', md: '2.5rem' },
                   background: 'linear-gradient(45deg, #60a5fa, #3b82f6)',
@@ -251,7 +238,7 @@ const EditPostPage = () => {
             <Box sx={{ flex: { xs: 1, lg: 8 }, display: 'flex', flexDirection: 'column', gap: 3 }}>
               {/* Guidelines Cards */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Card sx={{ 
+                <Card sx={{
                   background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(30, 30, 30, 0.8) 100%)',
                   border: '1px solid rgba(96, 165, 250, 0.2)',
                   borderRadius: 3,
@@ -274,7 +261,7 @@ const EditPostPage = () => {
                   </CardContent>
                 </Card>
 
-                <Card sx={{ 
+                <Card sx={{
                   background: 'linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(30, 30, 30, 0.8) 100%)',
                   border: '1px solid rgba(96, 165, 250, 0.2)',
                   borderRadius: 3,
@@ -300,9 +287,9 @@ const EditPostPage = () => {
                   </CardContent>
                 </Card>
               </Box>
-              
+
               {/* Markdown Editor */}
-              <Card sx={{ 
+              <Card sx={{
                 flex: 1,
                 background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(30, 30, 30, 0.9) 100%)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -339,7 +326,7 @@ const EditPostPage = () => {
 
             {/* Sidebar */}
             <Box sx={{ flex: { xs: 1, lg: 4 }, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <Card sx={{ 
+              <Card sx={{
                 background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(30, 30, 30, 0.9) 100%)',
                 border: '1px solid rgba(255, 255, 255, 0.1)',
                 borderRadius: 3,
@@ -350,9 +337,9 @@ const EditPostPage = () => {
                 display: 'flex',
                 flexDirection: 'column'
               }}>
-                <CardContent sx={{ 
-                  flex: 1, 
-                  overflow: 'auto', 
+                <CardContent sx={{
+                  flex: 1,
+                  overflow: 'auto',
                   p: 3,
                   '&::-webkit-scrollbar': {
                     width: '8px',
@@ -368,7 +355,7 @@ const EditPostPage = () => {
                       Post Details
                     </Typography>
                   </Box>
-                  
+
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <TextField
                       fullWidth
@@ -386,7 +373,7 @@ const EditPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <TextField
                       fullWidth
                       label="Slug"
@@ -403,7 +390,7 @@ const EditPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <TextField
                       fullWidth
                       label="Description"
@@ -420,7 +407,7 @@ const EditPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <FormControl fullWidth>
                       <InputLabel>Category</InputLabel>
                       <Controller
@@ -446,19 +433,9 @@ const EditPostPage = () => {
                         )}
                       />
                     </FormControl>
-                    
-                    <Controller
-                      name="tags"
-                      control={control}
-                      render={({ field, fieldState }) => (
-                        <TagSelector
-                          value={field.value}
-                          onChange={field.onChange}
-                          error={fieldState.error?.message}
-                        />
-                      )}
-                    />
-                    
+
+
+
                     <TextField
                       fullWidth
                       label="Reading Time (minutes)"
@@ -474,7 +451,7 @@ const EditPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <TextField
                       fullWidth
                       label="Thumbnail URL"
@@ -489,36 +466,25 @@ const EditPostPage = () => {
                         }
                       }}
                     />
-                    
+
                     <Divider sx={{ my: 1 }} />
-                    
+
+
+
                     <Controller
-                      name="useTagsAsKeywords"
+                      name="keywords"
                       control={control}
-                      render={({ field }) => (
-                        <FormControlLabel
-                          control={<Checkbox {...field} checked={field.value} />}
-                          label="Use tags as keywords"
+                      render={({ field, fieldState }) => (
+                        <KeywordsInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          error={fieldState.error?.message}
                         />
                       )}
                     />
-                    
-                    {!useTagsAsKeywords && (
-                      <Controller
-                        name="keywords"
-                        control={control}
-                        render={({ field, fieldState }) => (
-                          <KeywordsInput
-                            value={field.value}
-                            onChange={field.onChange}
-                            error={fieldState.error?.message}
-                          />
-                        )}
-                      />
-                    )}
                   </Box>
                 </CardContent>
-                
+
                 <Box sx={{ p: 3, pt: 0, borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
                   <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' }, mt: 2 }}>
                     <Button
@@ -527,9 +493,9 @@ const EditPostPage = () => {
                       size="large"
                       fullWidth
                       disabled={isSubmitting}
-                      onClick={() => handleSubmit((data) => onSubmit({...data, published: false}))()}
+                      onClick={() => handleSubmit((data) => onSubmit({ ...data, published: false }))()}
                       startIcon={<Save size={18} />}
-                      sx={{ 
+                      sx={{
                         textTransform: 'none',
                         fontWeight: 600,
                         background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
@@ -548,9 +514,9 @@ const EditPostPage = () => {
                       size="large"
                       fullWidth
                       disabled={isSubmitting}
-                      onClick={() => handleSubmit((data) => onSubmit({...data, published: true}))()}
+                      onClick={() => handleSubmit((data) => onSubmit({ ...data, published: true }))()}
                       startIcon={<Send size={18} />}
-                      sx={{ 
+                      sx={{
                         textTransform: 'none',
                         fontWeight: 600,
                         background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
@@ -570,7 +536,7 @@ const EditPostPage = () => {
                       component={Link}
                       href="/posts"
                       startIcon={<ArrowLeft size={18} />}
-                      sx={{ 
+                      sx={{
                         textTransform: 'none',
                         fontWeight: 600,
                         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -589,7 +555,7 @@ const EditPostPage = () => {
             </Box>
           </Box>
         </form>
-        
+
         <Snackbar
           open={snackbarOpen}
           autoHideDuration={6000}

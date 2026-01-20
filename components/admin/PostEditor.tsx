@@ -89,7 +89,7 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
     useEffect(() => {
         if (selectedClass && selectedSubject) {
             setLoadingSyllabus(true);
-            getSyllabus(selectedClass, selectedSubject)
+            getSyllabus(selectedClass, selectedSubject, selectedCategory)
                 .then(data => {
                     setSyllabus(data);
                     setValue('chapter_title', '');
@@ -102,23 +102,31 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
         } else {
             setSyllabus(null);
         }
-    }, [selectedClass, selectedSubject, setValue]);
+    }, [selectedClass, selectedSubject, selectedCategory, setValue]);
 
     const onSubmit = async (data: AdminFormData) => {
+        console.log("Form Submitted", data); // DEBUG
         setIsSubmitting(true);
         try {
             const result = await createPost(data);
-            if (result.success) {
+            console.log("CreatePost Result:", result); // DEBUG
+            if (result?.success) {
                 setSnackbar({ open: true, message: result.message, severity: 'success' });
                 reset();
             } else {
-                setSnackbar({ open: true, message: result.message || 'Error occurred', severity: 'error' });
+                setSnackbar({ open: true, message: result?.message || 'Error occurred', severity: 'error' });
             }
         } catch (e: any) {
+            console.error("Submission Error:", e); // DEBUG
             setSnackbar({ open: true, message: e.message, severity: 'error' });
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const onError = (errors: any) => {
+        console.log("Validation Errors:", errors);
+        setSnackbar({ open: true, message: "Please fill all required fields", severity: 'error' });
     };
 
     // Derived Options
@@ -181,7 +189,7 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
 
                                     <FormControl fullWidth size="small">
                                         <InputLabel>Medium</InputLabel>
-                                        <Select label="Medium" {...register('medium', { required: true })} value={selectedMedium} onChange={e => setValue('medium', e.target.value)}>
+                                        <Select label="Medium" {...register('medium')} value={selectedMedium} onChange={e => setValue('medium', e.target.value)}>
                                             {MEDIUM_OPTIONS.map(m => <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>)}
                                         </Select>
                                     </FormControl>
@@ -191,9 +199,9 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
                                         <Controller
                                             name="chapter_title"
                                             control={control}
-                                            rules={{ required: "Chapter is required" }}
                                             render={({ field }) => (
                                                 <Select label="Chapter" {...field}>
+                                                    <MenuItem value=""><em>None</em></MenuItem>
                                                     {syllabus?.chapters?.map((ch, idx) => (
                                                         <MenuItem key={idx} value={ch.title}>
                                                             {ch.title} {selectedMedium === 'assamese' && ch.title_as ? `(${ch.title_as})` : ''}
@@ -258,7 +266,8 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
                                 <div className="flex gap-2">
                                     <Button
                                         fullWidth variant="contained"
-                                        onClick={handleSubmit(d => onSubmit({ ...d, published: false }))}
+                                        type="button"
+                                        onClick={handleSubmit(d => onSubmit({ ...d, published: false }), onError)}
                                         disabled={isSubmitting}
                                         startIcon={<Save />}
                                     >
@@ -266,7 +275,8 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
                                     </Button>
                                     <Button
                                         fullWidth variant="contained" color="secondary"
-                                        onClick={handleSubmit(d => onSubmit({ ...d, published: true }))}
+                                        type="button"
+                                        onClick={handleSubmit(d => onSubmit({ ...d, published: true }), onError)}
                                         disabled={isSubmitting}
                                         startIcon={<Send />}
                                     >
@@ -279,7 +289,13 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
                 </Box>
             </form>
 
-            <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+                sx={{ zIndex: 9999 }}
+            >
                 <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
                     {snackbar.message}
                 </Alert>

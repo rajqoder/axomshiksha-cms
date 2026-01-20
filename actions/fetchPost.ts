@@ -75,7 +75,6 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
       slug: frontmatter.slug || slug, // Use slug from frontmatter if available, otherwise use the passed slug
       description: frontmatter.description || '',
       category: Array.isArray(frontmatter.categories) ? frontmatter.categories[0] || '' : (typeof frontmatter.categories === 'string' ? frontmatter.categories : ''),
-      category: Array.isArray(frontmatter.categories) ? frontmatter.categories[0] || '' : (typeof frontmatter.categories === 'string' ? frontmatter.categories : ''),
       content: content,
       published: !frontmatter.draft,
       readingTime: typeof frontmatter.readingTime === 'number' ? frontmatter.readingTime : parseInt(frontmatter.readingTime) || 5,

@@ -34,6 +34,10 @@ function getOctokit() {
 
   return new Octokit({
     auth: token,
+    request: {
+      fetch: fetch,
+      timeout: 30000,
+    },
   });
 }
 

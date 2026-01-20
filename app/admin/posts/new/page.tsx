@@ -1,6 +1,8 @@
 import { getSubjects, getTaxonomy } from '@/actions/cms/metadata';
 import PostEditor from '@/components/admin/PostEditor';
 
+export const dynamic = 'force-dynamic';
+
 export default async function NewPostAdminPage() {
     const subjects = await getSubjects();
     const taxonomy = await getTaxonomy();
