@@ -8,12 +8,10 @@ interface PostData {
   slug: string;
   description: string;
   category: string; // Single category as a string
-  tags: string[];
   content: string;
   published: boolean;
   readingTime: number | string; // Can be number or string depending on parsing
   thumbnail: string;
-  useTagsAsKeywords: boolean;
   keywords: string[] | string; // Can be string or array depending on parsing
   date: string;
   status: string;
@@ -35,13 +33,13 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
     });
 
     // Filter for markdown files that match our slug pattern
-    const matchingFiles = Array.isArray(fileList) 
-      ? fileList.filter(file => 
-          file.type === 'file' && 
-          file.name.endsWith('.md') &&
-          // Check if the filename starts with our slug followed by a hyphen
-          file.name.startsWith(`${slug}-`) 
-        )
+    const matchingFiles = Array.isArray(fileList)
+      ? fileList.filter(file =>
+        file.type === 'file' &&
+        file.name.endsWith('.md') &&
+        // Check if the filename starts with our slug followed by a hyphen
+        file.name.startsWith(`${slug}-`)
+      )
       : [];
 
     if (matchingFiles.length === 0) {
@@ -77,12 +75,11 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
       slug: frontmatter.slug || slug, // Use slug from frontmatter if available, otherwise use the passed slug
       description: frontmatter.description || '',
       category: Array.isArray(frontmatter.categories) ? frontmatter.categories[0] || '' : (typeof frontmatter.categories === 'string' ? frontmatter.categories : ''),
-      tags: Array.isArray(frontmatter.tags) ? frontmatter.tags : [],
+      category: Array.isArray(frontmatter.categories) ? frontmatter.categories[0] || '' : (typeof frontmatter.categories === 'string' ? frontmatter.categories : ''),
       content: content,
       published: !frontmatter.draft,
       readingTime: typeof frontmatter.readingTime === 'number' ? frontmatter.readingTime : parseInt(frontmatter.readingTime) || 5,
       thumbnail: frontmatter.thumbnail || '',
-      useTagsAsKeywords: false, // Default to false, will be determined based on tags vs keywords
       keywords: Array.isArray(frontmatter.keywords) ? frontmatter.keywords : (typeof frontmatter.keywords === 'string' ? [frontmatter.keywords] : []),
       date: frontmatter.date || new Date().toISOString(),
       status: frontmatter.draft ? 'Draft' : 'Published',
@@ -107,7 +104,7 @@ function parseFrontmatter(content: string) {
 
     // Parse TOML frontmatter manually - define as any initially to allow different types
     const frontmatter: Record<string, any> = {};
-    
+
     // Split by newlines and parse key-value pairs
     const lines = frontmatterStr.split('\n');
     for (const line of lines) {
@@ -115,7 +112,7 @@ function parseFrontmatter(content: string) {
       if (colonIndex > 0) {
         const key = line.substring(0, colonIndex).trim();
         let value: any = line.substring(colonIndex + 1).trim();
-        
+
         // Remove quotes and handle arrays
         if (value.startsWith('"') && value.endsWith('"')) {
           value = value.substring(1, value.length - 1);
@@ -134,7 +131,7 @@ function parseFrontmatter(content: string) {
           // Convert numeric strings to numbers
           value = Number(value);
         }
-        
+
         frontmatter[key] = value;
       }
     }
@@ -152,12 +149,12 @@ export async function getAllPosts(filterByCurrentUser: boolean = false): Promise
   try {
     // Get the current user session to retrieve user information
     const supabase = await createClient();
-    
+
     let userEmailUsername = null;
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        userEmailUsername = user.email.split('@')[0];
-      }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email) {
+      userEmailUsername = user.email.split('@')[0];
+    }
 
     // Initialize Octokit with the GitHub token
     const octokit = new Octokit({
@@ -179,10 +176,10 @@ export async function getAllPosts(filterByCurrentUser: boolean = false): Promise
 
     if (Array.isArray(data)) {
       // Filter for markdown files
-      let markdownFiles = data.filter(item => 
+      let markdownFiles = data.filter(item =>
         item.type === 'file' && item.name.endsWith('.md')
       );
-      
+
       // If filtering by current user, filter files by the author in filename
       if (filterByCurrentUser && userEmailUsername) {
         markdownFiles = markdownFiles.filter(file => {
@@ -197,7 +194,7 @@ export async function getAllPosts(filterByCurrentUser: boolean = false): Promise
         // Extract the original slug from the filename (before the last hyphen and email username)
         const lastHyphenIndex = fileNameWithoutExt.lastIndexOf('-');
         const slug = lastHyphenIndex !== -1 ? fileNameWithoutExt.substring(0, lastHyphenIndex) : fileNameWithoutExt;
-        
+
         const postData = await fetchPostBySlug(slug);
         if (postData) {
           // Update the slug in the returned data to use the slug from frontmatter if available

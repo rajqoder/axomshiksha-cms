@@ -1,0 +1,302 @@
+{
+  "English": {
+    "gradient": "bg-gradient-to-br from-blue-500 to-purple-600",
+    "classes": [
+      "class-1",
+      "class-2",
+      "class-3",
+      "class-4",
+      "class-5",
+      "class-6",
+      "class-7",
+      "class-8",
+      "class-9",
+      "class-10",
+      "class-11",
+      "class-12"
+    ]
+  },
+  "Assamese": {
+    "gradient": "bg-gradient-to-br from-red-500 to-orange-500",
+    "classes": [
+      "class-1",
+      "class-2",
+      "class-3",
+      "class-4",
+      "class-5",
+      "class-6",
+      "class-7",
+      "class-8",
+      "class-9",
+      "class-10",
+      "class-11",
+      "class-12"
+    ]
+  },
+  "Hindi": {
+    "gradient": "bg-gradient-to-br from-orange-400 to-amber-500",
+    "classes": [
+      "class-1",
+      "class-2",
+      "class-3",
+      "class-4",
+      "class-5",
+      "class-6",
+      "class-7",
+      "class-8",
+      "class-9",
+      "class-10",
+      "class-11",
+      "class-12"
+    ]
+  },
+  "Mathematics": {
+    "gradient": "bg-gradient-to-br from-indigo-500 to-cyan-500",
+    "classes": [
+      "class-1",
+      "class-2",
+      "class-3",
+      "class-4",
+      "class-5",
+      "class-6",
+      "class-7",
+      "class-8",
+      "class-9",
+      "class-10",
+      "class-11",
+      "class-12"
+    ]
+  },
+  "Science": {
+    "gradient": "bg-gradient-to-br from-emerald-500 to-teal-600",
+    "classes": [
+      "class-1",
+      "class-2",
+      "class-3",
+      "class-4",
+      "class-5",
+      "class-6",
+      "class-7",
+      "class-8",
+      "class-9",
+      "class-10"
+    ]
+  },
+  "Social Science": {
+    "gradient": "bg-gradient-to-br from-teal-500 to-green-600",
+    "classes": [
+      "class-6",
+      "class-7",
+      "class-8",
+      "class-9",
+      "class-10"
+    ]
+  },
+  "History": {
+    "gradient": "bg-gradient-to-br from-stone-500 to-neutral-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "ba",
+      "ma"
+    ]
+  },
+  "Geography": {
+    "gradient": "bg-gradient-to-br from-sky-500 to-blue-600",
+    "classes": [
+      "class-9",
+      "class-10",
+      "class-11",
+      "class-12",
+      "ba",
+      "ma"
+    ]
+  },
+  "Physics": {
+    "gradient": "bg-gradient-to-br from-violet-600 to-fuchsia-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "bsc",
+      "msc"
+    ]
+  },
+  "Chemistry": {
+    "gradient": "bg-gradient-to-br from-lime-500 to-emerald-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "bsc",
+      "msc"
+    ]
+  },
+  "Biology": {
+    "gradient": "bg-gradient-to-br from-green-500 to-lime-500",
+    "classes": [
+      "class-11",
+      "class-12",
+      "bsc",
+      "msc"
+    ]
+  },
+  "Computer Science": {
+    "gradient": "bg-gradient-to-br from-slate-600 to-slate-800",
+    "classes": [
+      "class-9",
+      "class-10",
+      "class-11",
+      "class-12",
+      "bca",
+      "mca",
+      "b-tech"
+    ]
+  },
+  "Economics": {
+    "gradient": "bg-gradient-to-br from-cyan-600 to-blue-700",
+    "classes": [
+      "class-9",
+      "class-10",
+      "class-11",
+      "class-12",
+      "ba",
+      "ma"
+    ]
+  },
+  "Political Science": {
+    "gradient": "bg-gradient-to-br from-rose-500 to-pink-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "ba",
+      "ma"
+    ]
+  },
+  "Education": {
+    "gradient": "bg-gradient-to-br from-yellow-500 to-amber-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "ba",
+      "ma",
+      "b.ed"
+    ]
+  },
+  "Environmental Science": {
+    "gradient": "bg-gradient-to-br from-green-400 to-emerald-500",
+    "classes": [
+      "class-1",
+      "class-2",
+      "class-3",
+      "class-4",
+      "class-5"
+    ]
+  },
+  "Accountancy": {
+    "gradient": "bg-gradient-to-br from-blue-600 to-indigo-700",
+    "classes": [
+      "class-11",
+      "class-12",
+      "bcom",
+      "mcom"
+    ]
+  },
+  "Business Studies": {
+    "gradient": "bg-gradient-to-br from-purple-500 to-indigo-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "bcom",
+      "mcom"
+    ]
+  },
+  "Logic & Philosophy": {
+    "gradient": "bg-gradient-to-br from-amber-600 to-orange-700",
+    "classes": [
+      "class-11",
+      "class-12",
+      "ba"
+    ]
+  },
+  "Anthropology": {
+    "gradient": "bg-gradient-to-br from-stone-600 to-neutral-700",
+    "classes": [
+      "class-11",
+      "class-12",
+      "ba",
+      "bsc"
+    ]
+  },
+  "Sociology": {
+    "gradient": "bg-gradient-to-br from-pink-500 to-rose-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "ba",
+      "ma"
+    ]
+  },
+  "Sanskrit": {
+    "gradient": "bg-gradient-to-br from-orange-500 to-red-500",
+    "classes": [
+      "class-6",
+      "class-7",
+      "class-8",
+      "class-9",
+      "class-10",
+      "class-11",
+      "class-12"
+    ]
+  },
+  "Advanced Assamese": {
+    "gradient": "bg-gradient-to-br from-red-600 to-orange-600",
+    "classes": [
+      "class-9",
+      "class-10",
+      "ba",
+      "ma"
+    ]
+  },
+  "Psychology": {
+    "gradient": "bg-gradient-to-br from-fuchsia-500 to-pink-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "ba",
+      "ma"
+    ]
+  },
+  "Home Science": {
+    "gradient": "bg-gradient-to-br from-rose-400 to-pink-500",
+    "classes": [
+      "class-11",
+      "class-12"
+    ]
+  },
+  "Statistics": {
+    "gradient": "bg-gradient-to-br from-cyan-500 to-sky-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "bsc",
+      "msc"
+    ]
+  },
+  "Biotechnology": {
+    "gradient": "bg-gradient-to-br from-green-600 to-teal-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "bsc",
+      "msc"
+    ]
+  },
+  "Geology": {
+    "gradient": "bg-gradient-to-br from-stone-500 to-neutral-600",
+    "classes": [
+      "class-11",
+      "class-12",
+      "bsc",
+      "msc"
+    ]
+  }
+}

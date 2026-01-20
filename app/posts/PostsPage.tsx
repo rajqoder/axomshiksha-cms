@@ -29,12 +29,10 @@ interface PostData {
   slug: string;
   description: string;
   category: string;
-  tags: string[];
   content: string;
   published: boolean;
   readingTime: number | string;
   thumbnail: string;
-  useTagsAsKeywords: boolean;
   keywords: string[] | string;
   date: string;
   status: string;

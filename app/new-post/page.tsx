@@ -27,7 +27,6 @@ import {
   DialogContentText,
   DialogActions,
 } from '@mui/material';
-import TagSelector from '@/components/TagSelector';
 import KeywordsInput from '@/components/KeywordsInput';
 import { CATEGORIES, CATEGORY_MAP } from '../CONSTANT';
 import MarkdownEditor, { MarkdownEditorRef } from '@/components/MarkdownEditor';
@@ -40,12 +39,10 @@ interface FormData {
   slug: string;
   description: string;
   category: string;
-  tags: string[];
   content: string;
   published: boolean;
   readingTime: number;
   thumbnail: string;
-  useTagsAsKeywords: boolean;
   keywords: string[];
 }
 
@@ -63,19 +60,12 @@ const NewPostPage = () => {
       slug: '',
       description: '',
       category: '',
-      tags: [],
       content: '',
       published: false,
       readingTime: 5,
       thumbnail: '',
-      useTagsAsKeywords: false,
       keywords: [],
     }
-  });
-
-  const useTagsAsKeywords = useWatch({
-    control,
-    name: 'useTagsAsKeywords',
   });
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -243,7 +233,6 @@ const NewPostPage = () => {
                       <li><strong>Slug</strong>: URL-friendly version (e.g., "my-awesome-post")</li>
                       <li><strong>Description</strong>: Brief summary for search previews</li>
                       <li><strong>Category</strong>: Organizes content for navigation</li>
-                      <li><strong>Tags</strong>: Keywords for content discovery</li>
                       <li><strong>Reading Time</strong>: Estimated minutes to read</li>
                       <li><strong>Thumbnail URL</strong>: Featured image for listings</li>
                       <li><strong>Keywords</strong>: SEO terms for search visibility</li>
@@ -399,18 +388,6 @@ const NewPostPage = () => {
                       />
                     </FormControl>
 
-                    <Controller
-                      name="tags"
-                      control={control}
-                      render={({ field, fieldState }) => (
-                        <TagSelector
-                          value={field.value}
-                          onChange={field.onChange}
-                          error={fieldState.error?.message}
-                        />
-                      )}
-                    />
-
                     <TextField
                       fullWidth
                       label="Reading Time (minutes)"
@@ -445,29 +422,16 @@ const NewPostPage = () => {
                     <Divider sx={{ my: 1 }} />
 
                     <Controller
-                      name="useTagsAsKeywords"
+                      name="keywords"
                       control={control}
-                      render={({ field }) => (
-                        <FormControlLabel
-                          control={<Checkbox {...field} checked={field.value} />}
-                          label="Use tags as keywords"
+                      render={({ field, fieldState }) => (
+                        <KeywordsInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          error={fieldState.error?.message}
                         />
                       )}
                     />
-
-                    {!useTagsAsKeywords && (
-                      <Controller
-                        name="keywords"
-                        control={control}
-                        render={({ field, fieldState }) => (
-                          <KeywordsInput
-                            value={field.value}
-                            onChange={field.onChange}
-                            error={fieldState.error?.message}
-                          />
-                        )}
-                      />
-                    )}
                   </Box>
                 </CardContent>
 

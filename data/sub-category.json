@@ -1,0 +1,162 @@
+{
+  "adre": {
+    "description": "ADRE grade 3 & 4 study notes, aptitude tricks, and mock tests. Targeted preparation for Assam Direct Recruitment Exams.",
+    "category": "competitive-exams"
+  },
+  "anm": {
+    "description": "ANM Nursing course notes, community health, and practical guides. Study material for Auxiliary Nursing Midwifery students.",
+    "category": "diploma"
+  },
+  "apsc": {
+    "description": "APSC Prelims and Mains notes, Assam GK, and current affairs. Strategic study materials for Assam Public Service Commission aspirants.",
+    "category": "competitive-exams"
+  },
+  "ba": {
+    "description": "Bachelor of Arts (BA) semester notes for Honors and General. History, Political Science, English, Education, and Sociology resources.",
+    "category": "ug"
+  },
+  "bba": {
+    "description": "Bachelor of Business Administration (BBA) notes. Management principles, marketing strategies, and organizational behavior study aids.",
+    "category": "ug"
+  },
+  "bca": {
+    "description": "Bachelor of Computer Applications (BCA) programming notes. C, C++, Java, Python, and Database Management Systems resources.",
+    "category": "ug"
+  },
+  "bcom": {
+    "description": "Bachelor of Commerce (BCom) notes and financial guides. Accounting, Business Law, Macroeconomics, and Taxation study materials.",
+    "category": "ug"
+  },
+  "b.ed": {
+    "description": "Bachelor of Education (B.Ed) entrance notes and coursework. Pedagogy, school management, and child psychology resources for trainees.",
+    "category": "teaching-course"
+  },
+  "bpharm": {
+    "description": "Bachelor of Pharmacy (BPharm) notes and pharmaceutical chemistry. Drug analysis, pharmacology, and medicinal chemistry study guides.",
+    "category": "ug"
+  },
+  "bsc": {
+    "description": "Bachelor of Science (BSc) semester notes for Major and General. Physics, Chemistry, Zoology, Botany, and Mathematics resources.",
+    "category": "ug"
+  },
+  "bsw": {
+    "description": "Bachelor of Social Work (BSW) field work reports and theory. Social welfare, community development, and sociology notes.",
+    "category": "ug"
+  },
+  "b-tech": {
+    "description": "Bachelor of Technology (B.Tech) engineering notes. Resources for CSE, Civil, Mechanical, and Electrical engineering semesters.",
+    "category": "ug"
+  },
+  "bvoc": {
+    "description": "Bachelor of Vocation (BVoc) skill-based course notes. Retail management, IT, and tourism study materials for vocational students.",
+    "category": "ug"
+  },
+  "class-1": {
+    "description": "Class 1 notes, worksheets, and fun activities. Build a strong learning foundation with basics of Math, English, and fundamental subjects.",
+    "category": "lower-primary"
+  },
+  "class-2": {
+    "description": "Class 2 study materials, interactive lessons, and essential notes. Enhance reading, writing, and arithmetic skills with engaging content.",
+    "category": "lower-primary"
+  },
+  "class-3": {
+    "description": "Class 3 subject guides, EVS notes, and Math exercises. Comprehensive resources to support academic growth and curiosity.",
+    "category": "lower-primary"
+  },
+  "class-4": {
+    "description": "Class 4 curriculum notes, science basics, and language lessons. Structured study aids to improve understanding and grades.",
+    "category": "lower-primary"
+  },
+  "class-5": {
+    "description": "Class 5 exam prep, revision notes, and scholarship study guides. Prepare for primary school finals with targeted resources.",
+    "category": "lower-primary"
+  },
+  "class-6": {
+    "description": "Comprehensive study materials for Class 6 students including notes, summaries, and important questions for English, Science, Social Science, and more.",
+    "category": "upper-primary"
+  },
+  "class-7": {
+    "description": "Class 7 comprehensive guides, math solutions, and science concepts. In-depth study materials to master middle school syllabus topics.",
+    "category": "upper-primary"
+  },
+  "class-8": {
+    "description": "Class 8 board prep foundation, science projects, and math formulas. Essential resources for academic excellence and high school readiness.",
+    "category": "upper-primary"
+  },
+  "class-9": {
+    "description": "Class 9 SEBA/CBSE notes, important questions, and chapter summaries. Building benchmarks for board exams with rigorous study materials.",
+    "category": "secondary"
+  },
+  "class-10": {
+    "description": "Class 10 Board Exam notes, sample papers, and topper strategies. Complete guide to acing HSLC/CBSE finals with expert-curated content.",
+    "category": "secondary"
+  },
+  "class-11": {
+    "description": "Class 11 stream-wise notes (Science/Arts/Commerce). Foundational concepts for higher secondary education and competitive entrance exam preparation.",
+    "category": "higher-secondary"
+  },
+  "class-12": {
+    "description": "Class 12 AHSEC/CBSE study materials, practical guides, and solved papers. Final year resources for board success and college admissions.",
+    "category": "higher-secondary"
+  },
+  "ctet": {
+    "description": "CTET paper 1 & 2 study guides, NCERT summaries, and pedagogy notes. Central Teacher Eligibility Test preparation for national level teaching jobs.",
+    "category": "teaching-course"
+  },
+  "d.el.ed": {
+    "description": "D.El.Ed coursework notes, child pedagogy, and lesson plans. Essential training materials for future elementary educators and diploma students.",
+    "category": "teaching-course"
+  },
+  "diploma-engineering": {
+    "description": "Polytechnic Diploma in Engineering notes. Civil, Mechanical, and Electrical branch study materials and practical manuals.",
+    "category": "diploma"
+  },
+  "gnm": {
+    "description": "GNM Nursing notes and anatomy physiology guides. General Nursing and Midwifery course resources for aspiring nurses.",
+    "category": "diploma"
+  },
+  "llb": {
+    "description": "Bachelor of Laws (LLB) case studies and constitutional law notes. Legal aptitude and Indian Penal Code resources for law students.",
+    "category": "ug"
+  },
+  "llm": {
+    "description": "Master of Laws (LLM) dissertation guides and advanced legal theory. Specialization notes for corporate, criminal, and constitutional law.",
+    "category": "pg"
+  },
+  "ma": {
+    "description": "Master of Arts (MA) research papers and literature critiques. Advanced study materials for English, History, Political Science, and Education.",
+    "category": "pg"
+  },
+  "mba": {
+    "description": "Master of Business Administration (MBA) case studies and project reports. Finance, Marketing, and HR management resources.",
+    "category": "pg"
+  },
+  "mca": {
+    "description": "Master of Computer Applications (MCA) advanced coding notes. Software engineering, AI, and cloud computing study materials.",
+    "category": "pg"
+  },
+  "mcom": {
+    "description": "Master of Commerce (MCom) thesis guides and corporate accounting. Advanced finance and business research resources.",
+    "category": "pg"
+  },
+  "msc": {
+    "description": "Master of Science (MSc) thesis work and lab techniques. Advanced Physics, Chemistry, Botany, and Zoology research notes.",
+    "category": "pg"
+  },
+  "msw": {
+    "description": "Master of Social Work (MSW) fieldwork guides and social policy notes. Resources for professional social work and community service.",
+    "category": "pg"
+  },
+  "mtech": {
+    "description": "Master of Technology (MTech) research methodologies. Advanced engineering concepts and thesis guidance.",
+    "category": "pg"
+  },
+  "phd": {
+    "description": "PhD research methodology, thesis writing, and synopsis guidelines. Resources for doctoral research scholars across disciplines.",
+    "category": "doctorate"
+  },
+  "tet": {
+    "description": "TET child development notes, pedagogy, and language papers. Complete guide to clearing Teacher Eligibility Tests in Assam.",
+    "category": "teaching-course"
+  }
+}

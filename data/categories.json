@@ -1,0 +1,50 @@
+{
+  "lower-primary": {
+    "description": "Lower Primary (Class 1-5) notes, worksheets, and study materials for Axomshiksha students. Build a strong foundation with easy-to-understand lessons and interactive activities.",
+    "image": "/images/categories/lower-primary.png"
+  },
+  "upper-primary": {
+    "description": "Upper Primary (Class 6-8) guides, subject notes, and exam prep for middle schoolers. Enhance learning with comprehensive study resources on all key subjects.",
+    "image": "/images/categories/upper-primary.png"
+  },
+  "secondary": {
+    "description": "Secondary (Class 9-10) SEBA/CBSE notes, question banks, and textbook solutions. Prepare for board exams with targeted study materials and expert guidance.",
+    "image": "/images/categories/secondary.png"
+  },
+  "higher-secondary": {
+    "description": "Higher Secondary (Class 11-12) AHSEC/CBSE study notes, previous papers, and important questions. Master Science, Arts, and Commerce streams with in-depth academic resources.",
+    "image": "/images/categories/higher-secondary.png"
+  },
+  "ug": {
+    "description": "Undergraduate (BA, BSc, BCom) notes, lecture summaries, and university exam guides. Ace your semester exams with specialized study content for college students.",
+    "image": "/images/categories/ug.png"
+  },
+  "pg": {
+    "description": "Postgraduate (MA, MSc, MCom) research notes, thesis guides, and advanced study materials. Deepen your subject knowledge with expert-curated academic resources.",
+    "image": "/images/categories/pg.png"
+  },
+  "diploma": {
+    "description": "Diploma and Polytechnic course notes, practical manuals, and technical study guides. Get career-ready with specialized resources for vocational and technical education.",
+    "image": "/images/categories/diploma.png"
+  },
+  "teaching-course": {
+    "description": "B.Ed and D.El.Ed study notes, lesson plans, and TET preparation materials. Essential resources for aspiring teachers to succeed in competitive teaching exams.",
+    "image": "/images/categories/teaching-course.png"
+  },
+  "competitive-exams": {
+    "description": "APSC, ADRE, TET, and Railway exam study materials, current affairs, and mock tests. Crack government exams with focused preparation strategies and notes.",
+    "image": "/images/categories/competetive-exams.png"
+  },
+  "skill-development": {
+    "description": "Professional skill courses, computer notes, and soft skills training materials. Up-level your career path with practical guides for modern workplace success.",
+    "image": "/images/categories/skill-development.png"
+  },
+  "doctorate": {
+    "description": "PhD research methodology notes, thesis writing tips, and academic publication guides. Support your doctoral journey with advanced scholarly resources.",
+    "image": "/images/categories/doctorate.png"
+  },
+  "research": {
+    "description": "Academic research papers, methodology guides, and project proposal templates. Comprehensive tools and notes for scholars, students, and independent researchers.",
+    "image": "/images/categories/research.png"
+  }
+}

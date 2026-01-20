@@ -9,7 +9,7 @@ import remarkGfm from 'remark-gfm';
 // Dynamically import the markdown editor to avoid SSR issues
 const MdEditor = dynamic(
   () => import('@uiw/react-md-editor'),
-  { 
+  {
     ssr: false
   }
 );
@@ -101,7 +101,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ val
         const textAfter = value.substring(end);
         const newValue = textBefore + text + textAfter;
         onChange(newValue);
-        
+
         // Set cursor position after inserted text
         setTimeout(() => {
           textarea.focus();
@@ -239,9 +239,13 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ val
       .w-md-editor-fullscreen .w-md-editor-preview img:not([src]) {
         display: none !important;
       }
+      
+      body:has(.w-md-editor-fullscreen) #admin-layout {
+        z-index: 2000 !important;
+      }
     `;
     document.head.appendChild(style);
-    
+
     return () => {
       if (observer) observer.disconnect();
       if (documentObserver) documentObserver.disconnect();
@@ -250,8 +254,8 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ val
   }, []);
 
   return (
-    <Box sx={{ 
-      height: '100%', 
+    <Box sx={{
+      height: '100%',
       overflow: 'auto',
       '&::-webkit-scrollbar': {
         width: '8px',
@@ -262,189 +266,75 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ val
       scrollbarWidth: 'thin',
       '& .w-md-editor': {
         backgroundColor: 'transparent !important',
-        height: '100%',
-      },
-      '& .w-md-editor-text': {
-        backgroundColor: 'transparent !important',
-      },
-      '& .w-md-editor-text-pre': {
-        backgroundColor: 'transparent !important',
-      },
-      '& .w-md-editor-text-textarea': {
-        backgroundColor: 'transparent !important',
-        '& [class*="token"]': {
-          backgroundColor: 'transparent !important',
-          color: 'inherit !important',
-        },
-      },
-      '& .w-md-editor-preview': {
-        backgroundColor: 'transparent !important',
-        '& .wmde-markdown': {
-          backgroundColor: 'transparent !important',
-        },
-        '& .wmde-markdown-color': {
-          backgroundColor: 'transparent !important',
-        },
-        '& .wmde-markdown-var': {
-          backgroundColor: 'transparent !important',
-        },
-        // Fix table background colors
-        '& table': {
-          backgroundColor: 'transparent !important',
-        },
-        '& table thead': {
-          backgroundColor: 'transparent !important',
-        },
-        '& table tbody': {
-          backgroundColor: 'transparent !important',
-        },
-        '& table tr': {
-          backgroundColor: 'transparent !important',
-        },
-        '& table td': {
-          backgroundColor: 'transparent !important',
-        },
-        '& table th': {
-          backgroundColor: 'transparent !important',
-        },
-        // Ensure list markers are visible
-        '& ol': {
-          listStyle: 'decimal !important',
-          paddingLeft: '1.5em !important',
-        },
-        '& ul': {
-          listStyle: 'disc !important',
-          paddingLeft: '1.5em !important',
-        },
-        '& li': {
-          display: 'list-item !important',
-          listStylePosition: 'outside !important',
-        },
-        '& ol li': {
-          listStyleType: 'decimal !important',
-        },
-        '& ul li': {
-          listStyleType: 'disc !important',
-        },
-        // Hide images with empty src to prevent warnings
-        '& img[src=""]': {
-          display: 'none !important',
-        },
-        '& img:not([src])': {
-          display: 'none !important',
-        },
-      },
-      '& .w-md-editor-text-textarea, & .w-md-editor-text-pre': {
-        background: 'transparent !important',
-      },
-      '& .w-md-editor-text-textarea [class*="token"]': {
-        backgroundColor: 'transparent !important',
-        color: 'inherit !important',
-      },
-      '& .w-md-editor-bottom': {
-        display: 'none !important',
-      },
-      '& .w-md-editor-footer': {
-        display: 'none !important',
+        color: '#e5e7eb !important',
       },
       '& .w-md-editor-toolbar': {
-        backgroundColor: 'transparent !important',
-      },
-      // Fullscreen mode styling - use same background as normal mode
-      '& .w-md-editor-fullscreen': {
-        backgroundColor: 'transparent !important',
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(30, 30, 30, 0.9) 100%) !important',
-        zIndex: 9999,
-        '&::before': {
-          content: '""',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: '#0f0f10',
-          zIndex: -1,
+        backgroundColor: 'rgba(255, 255, 255, 0.05) !important',
+        borderBottom: '1px solid rgba(255, 255, 255, 0.1) !important',
+        '& li > button': {
+          color: '#e5e7eb !important',
+          '&:hover': {
+            backgroundColor: 'rgba(255, 255, 255, 0.1) !important',
+          }
         },
+        '& svg': {
+          width: '18px !important',
+          height: '18px !important',
+        }
       },
-      '& .w-md-editor-fullscreen .w-md-editor': {
-        backgroundColor: 'transparent !important',
-        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(30, 30, 30, 0.9) 100%) !important',
-      },
-      '& .w-md-editor-fullscreen .w-md-editor-text': {
-        backgroundColor: 'transparent !important',
-      },
-      '& .w-md-editor-fullscreen .w-md-editor-text-pre': {
+      '& .w-md-editor-content': {
         backgroundColor: 'transparent !important',
       },
-      '& .w-md-editor-fullscreen .w-md-editor-text-textarea': {
-        backgroundColor: 'transparent !important',
+      '& .w-md-editor-text': {
+        background: 'transparent !important',
+        '& *': {
+          background: 'transparent !important',
+        }
       },
-      '& .w-md-editor-fullscreen .w-md-editor-preview': {
-        backgroundColor: 'transparent !important',
+      '& .w-md-editor-text-pre': {
+        background: 'transparent !important',
+      },
+      '& .w-md-editor-text-input': {
+        color: '#e5e7eb !important',
+        background: 'transparent !important',
+        WebkitTextFillColor: '#e5e7eb !important',
+      },
+      '& .w-md-editor-text-textarea': {
+        background: 'transparent !important',
+      },
+      '& .w-md-editor-preview': {
+        background: 'transparent !important',
+        boxShadow: 'none !important',
+        color: '#e5e7eb !important',
+        borderLeft: '1px solid rgba(255, 255, 255, 0.1) !important',
         '& .wmde-markdown': {
-          backgroundColor: 'transparent !important',
-        },
-        '& .wmde-markdown-color': {
-          backgroundColor: 'transparent !important',
-        },
-        '& .wmde-markdown-var': {
-          backgroundColor: 'transparent !important',
-        },
-        // Fix table background in fullscreen mode
-        '& table': {
-          backgroundColor: 'transparent !important',
           background: 'transparent !important',
-        },
-        '& table thead': {
-          backgroundColor: 'transparent !important',
-          background: 'transparent !important',
-        },
-        '& table tbody': {
-          backgroundColor: 'transparent !important',
-          background: 'transparent !important',
-        },
-        '& table tr': {
-          backgroundColor: 'transparent !important',
-          background: 'transparent !important',
-        },
-        '& table td': {
-          backgroundColor: 'transparent !important',
-          background: 'transparent !important',
-        },
-        '& table th': {
-          backgroundColor: 'transparent !important',
-          background: 'transparent !important',
-        },
-        // Ensure list markers are visible in fullscreen
-        '& ol': {
-          listStyle: 'decimal !important',
-          paddingLeft: '1.5em !important',
-        },
-        '& ul': {
-          listStyle: 'disc !important',
-          paddingLeft: '1.5em !important',
-        },
-        '& li': {
-          display: 'list-item !important',
-          listStylePosition: 'outside !important',
-        },
-        '& ol li': {
-          listStyleType: 'decimal !important',
-        },
-        '& ul li': {
-          listStyleType: 'disc !important',
-        },
-        // Fix image alt text background in fullscreen
-        '& img[src=""]': {
-          display: 'none !important',
-        },
-        '& img:not([src])': {
-          display: 'none !important',
-        },
+          color: '#e5e7eb !important',
+        }
+      },
+
+      // Fullscreen Overrides
+      '& .w-md-editor-fullscreen': {
+        position: 'fixed !important',
+        top: '0 !important',
+        left: '0 !important',
+        width: '100vw !important',
+        height: '100vh !important',
+        zIndex: '99999 !important',
+        margin: '0 !important',
+        backgroundColor: '#0f0f10 !important',
+        background: 'linear-gradient(135deg, rgba(20, 20, 20, 1) 0%, rgba(30, 30, 30, 1) 100%) !important',
       },
       '& .w-md-editor-fullscreen .w-md-editor-toolbar': {
-        backgroundColor: 'transparent !important',
-      },
+        position: 'sticky',
+        top: 0,
+        zIndex: '100000 !important',
+        backgroundColor: 'rgba(20, 20, 20, 0.95) !important',
+        borderBottom: '1px solid rgba(255,255,255,0.1)',
+        '& li > button': {
+          color: '#ffffff !important',
+        }
+      }
     }}>
       <MdEditor
         value={value}

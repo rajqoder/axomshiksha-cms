@@ -19,12 +19,10 @@ interface PostData {
   slug: string;
   description: string;
   category: string;
-  tags: string[];
   content: string;
   published: boolean;
   readingTime: number | string; // Matches the type from fetchPostBySlug
   thumbnail: string;
-  useTagsAsKeywords: boolean;
   keywords: string[] | string; // Matches the type from fetchPostBySlug
   date: string;
   status: string;
@@ -83,12 +81,7 @@ const PostDetailPage = () => {
           <Typography variant="body1" paragraph>
             {post.description}
           </Typography>
-          <Box sx={{ mt: 2 }}>
-            {post.tags.map((tag: string, index: number) => (
-              <Chip key={index} label={tag} size="small" sx={{ mr: 1, mb: 1 }} />
-            ))}
-          </Box>
-          <Box 
+          <Box
             sx={{ mt: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}
             dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, '<br />') }}
           />
