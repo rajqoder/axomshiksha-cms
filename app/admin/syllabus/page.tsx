@@ -3,6 +3,8 @@ import { getSyllabus } from '@/actions/cms/syllabus';
 import SyllabusEditor from '@/components/admin/SyllabusEditor';
 import SyllabusSelector from '@/components/admin/SyllabusSelector';
 
+export const dynamic = 'force-dynamic';
+
 interface PageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
