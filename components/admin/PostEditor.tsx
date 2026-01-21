@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { Controller, useForm, useWatch } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+import { Controller, useForm } from 'react-hook-form';
 import {
     Box, Button, TextField, FormControl, InputLabel, Select, MenuItem,
-    Paper, Checkbox, FormControlLabel, Snackbar, Alert, Card, CardContent,
+    Snackbar, Alert, Card, CardContent,
     Typography, Divider
 } from '@mui/material';
 import KeywordsInput from '@/components/KeywordsInput';
@@ -202,11 +201,17 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
                                             render={({ field }) => (
                                                 <Select label="Chapter" {...field}>
                                                     <MenuItem value=""><em>None</em></MenuItem>
-                                                    {syllabus?.chapters?.map((ch, idx) => (
-                                                        <MenuItem key={idx} value={ch.title}>
-                                                            {ch.title} {selectedMedium === 'assamese' && ch.title_as ? `(${ch.title_as})` : ''}
-                                                        </MenuItem>
-                                                    ))}
+                                                    {syllabus?.chapters?.map((ch, idx) => {
+                                                        const val = ch.title || ch.title_as || '';
+                                                        if (!val) return null; // Skip empty chapters
+
+                                                        return (
+                                                            <MenuItem key={idx} value={val}>
+                                                                {val}
+                                                                {selectedMedium === 'assamese' && ch.title && ch.title_as ? ` (${ch.title_as})` : ''}
+                                                            </MenuItem>
+                                                        );
+                                                    })}
                                                 </Select>
                                             )}
                                         />

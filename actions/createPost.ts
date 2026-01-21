@@ -26,7 +26,7 @@ async function ensureIndexFile(folderPath: string, title: string, dateString: st
       const content = `+++
 title = "${title}"
 draft = false
-date = ${dateString}
+date = "${dateString}"
 +++
 `;
       // We don't want to fail the whole request if this fails, so catching inside

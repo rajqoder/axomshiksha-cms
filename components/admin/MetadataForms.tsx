@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { Subject, CategoriesData, SubCategoriesData, updateSubjects, updateCategories, updateSubCategories, CategoryInfo } from '@/actions/cms/metadata';
-import { Save, Filter, Layers, BookOpen, FolderOpen } from 'lucide-react';
+import { Save, Filter, Layers, BookOpen, FolderOpen, Plus } from 'lucide-react';
 import {
     Box, Tabs, Tab, Select, MenuItem, Button, Card, CardContent,
     Typography, FormControl, InputLabel, Snackbar, Alert, Chip
@@ -10,6 +10,8 @@ import {
 import SubjectCard from './SubjectCard';
 import ClassCard from './ClassCard';
 import CategoryCard from './CategoryCard';
+import AddClassDialog from './AddClassDialog';
+import AddSubjectDialog from './AddSubjectDialog';
 
 interface MetadataManagerProps {
     initialSubjects: Record<string, Subject>;
@@ -26,6 +28,10 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
 
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
     const [activeTab, setActiveTab] = useState<TabType>('subjects');
+
+    // Dialog States
+    const [isAddClassOpen, setIsAddClassOpen] = useState(false);
+    const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
 
     // --- Filters ---
     const [filterCategory, setFilterCategory] = useState<string>('');
@@ -123,17 +129,58 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
         }));
     }, []);
 
+    // --- Add Handlers ---
+    const handleAddClass = (key: string, category: string, description: string, image: string) => {
+        if (subCategoriesObj[key]) {
+            setSnackbar({ open: true, message: 'Class key already exists!', severity: 'error' });
+            return;
+        }
+        setSubCategoriesObj(prev => ({
+            ...prev,
+            [key]: { description, image, category, type: 'class' } // Default type
+        }));
+        setSnackbar({ open: true, message: 'Class added! Remember to save changes.', severity: 'success' });
+    };
+
+    const handleAddSubject = (key: string, title: string, classes: string[], description: string, gradient: string) => {
+        if (subjectsObj[key]) {
+            setSnackbar({ open: true, message: 'Subject key already exists!', severity: 'error' });
+            return;
+        }
+        setSubjectsObj(prev => ({
+            ...prev,
+            [key]: { title, classes, description, gradient }
+        }));
+        setSnackbar({ open: true, message: 'Subject added! Remember to save changes.', severity: 'success' });
+    };
+
     // Reset Class filter when Category changes
     const handleFilterCategoryChange = (cat: string) => {
         setFilterCategory(cat);
         setFilterClass('');
     };
 
-    const tabLabel = (type: string, count: number) => (
-        <div className="flex items-center gap-2">
-            <span className="capitalize">{type}</span>
-            <Chip label={count} size="small" variant="outlined" sx={{ height: 20, fontSize: '0.7rem' }} />
-        </div>
+    // --- Pagination Logic ---
+    const ITEMS_PER_PAGE = 10;
+    const [page, setPage] = useState(1);
+
+    // Reset page when tab or filter changes
+    useMemo(() => {
+        setPage(1);
+    }, [activeTab, filterCategory, filterClass]);
+
+    const displayedSubjects = useMemo(() => filteredSubjects.slice(0, page * ITEMS_PER_PAGE), [filteredSubjects, page]);
+    const displayedClasses = useMemo(() => filteredClasses.slice(0, page * ITEMS_PER_PAGE), [filteredClasses, page]);
+
+    const tabLabel = (label: string, count: number) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {label.charAt(0).toUpperCase() + label.slice(1)}
+            <Chip
+                label={count}
+                size="small"
+                sx={{ height: 20, minWidth: 20, px: 0.5, fontSize: '0.7rem', opacity: 0.8 }}
+            />
+        </Box>
     );
 
     return (
@@ -153,15 +200,37 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
                             <Tab label={tabLabel('categories', Object.keys(categoriesObj).length)} value="categories" icon={<FolderOpen size={18} />} iconPosition="start" />
                         </Tabs>
 
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<Save />}
-                            onClick={() => handleSave(activeTab)}
-                            sx={{ mb: 1, mr: 1 }}
-                        >
-                            Save Changes
-                        </Button>
+                        <Box sx={{ display: 'flex', gap: 2 }}>
+                            {activeTab === 'subjects' && (
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Plus />}
+                                    onClick={() => setIsAddSubjectOpen(true)}
+                                    sx={{ mb: 1 }}
+                                >
+                                    Add Subject
+                                </Button>
+                            )}
+                            {activeTab === 'classes' && (
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Plus />}
+                                    onClick={() => setIsAddClassOpen(true)}
+                                    sx={{ mb: 1 }}
+                                >
+                                    Add Class
+                                </Button>
+                            )}
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                startIcon={<Save />}
+                                onClick={() => handleSave(activeTab)}
+                                sx={{ mb: 1, mr: 1 }}
+                            >
+                                Save Changes
+                            </Button>
+                        </Box>
                     </Box>
 
                     {/* Filter Bar (Only for Subjects and Classes) */}
@@ -222,16 +291,22 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
                 {/* --- SUBJECTS TAB --- */}
                 {activeTab === 'subjects' && (
                     filteredSubjects.length > 0 ? (
-                        filteredSubjects.map(([key, subject]) => (
-                            <SubjectCard
-                                key={key}
-                                subjectKey={key}
-                                subject={subject}
-                                allClassOptions={allClassOptions}
-                                onSubjectChange={handleSubjectChange}
-                                onClassToggle={handleClassToggle}
-                            />
-                        ))
+                        <>
+                            {displayedSubjects.map(([key, subject]) => (
+                                <SubjectCard
+                                    key={key}
+                                    subjectKey={key}
+                                    subject={subject}
+                                    allClassOptions={allClassOptions}
+                                    onSubjectChange={handleSubjectChange}
+                                />
+                            ))}
+                            {displayedSubjects.length < filteredSubjects.length && (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                                    <Button onClick={() => setPage(p => p + 1)} variant="outlined">Load More Subjects</Button>
+                                </Box>
+                            )}
+                        </>
                     ) : (
                         <Alert severity="info" variant="outlined">No subjects found for the current filters.</Alert>
                     )
@@ -240,15 +315,22 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
                 {/* --- CLASSES TAB --- */}
                 {activeTab === 'classes' && (
                     filteredClasses.length > 0 ? (
-                        filteredClasses.map(([key, subCat]) => (
-                            <ClassCard
-                                key={key}
-                                classKey={key}
-                                subCat={subCat}
-                                categoryOptions={categoryOptions}
-                                onSubCategoryChange={handleSubCategoryChange}
-                            />
-                        ))
+                        <>
+                            {displayedClasses.map(([key, subCat]) => (
+                                <ClassCard
+                                    key={key}
+                                    classKey={key}
+                                    subCat={subCat}
+                                    categoryOptions={categoryOptions}
+                                    onSubCategoryChange={handleSubCategoryChange}
+                                />
+                            ))}
+                            {displayedClasses.length < filteredClasses.length && (
+                                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                                    <Button onClick={() => setPage(p => p + 1)} variant="outlined">Load More Classes</Button>
+                                </Box>
+                            )}
+                        </>
                     ) : (
                         <Alert severity="info" variant="outlined">No classes found for the current filters.</Alert>
                     )
@@ -266,6 +348,20 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
                     ))
                 )}
             </Box>
+
+            {/* Dialogs */}
+            <AddClassDialog
+                open={isAddClassOpen}
+                onClose={() => setIsAddClassOpen(false)}
+                onAdd={handleAddClass}
+                categoryOptions={categoryOptions}
+            />
+            <AddSubjectDialog
+                open={isAddSubjectOpen}
+                onClose={() => setIsAddSubjectOpen(false)}
+                onAdd={handleAddSubject}
+                classOptions={allClassOptions}
+            />
 
             {/* Notification */}
             <Snackbar open={snackbar.open} autoHideDuration={6000} onClose={() => setSnackbar({ ...snackbar, open: false })}>

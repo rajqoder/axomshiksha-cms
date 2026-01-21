@@ -35,7 +35,7 @@ function getOctokit() {
   return new Octokit({
     auth: token,
     request: {
-      fetch: fetch,
+      fetch: (url: any, options: any) => fetch(url, { ...options, cache: 'no-store' }),
       timeout: 30000,
     },
   });

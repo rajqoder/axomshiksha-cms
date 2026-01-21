@@ -7,6 +7,8 @@ interface PageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 
+import { Paper, Typography } from '@mui/material';
+
 export default async function SyllabusPage({ searchParams }: PageProps) {
     const taxonomy = await getTaxonomy();
     const subCategories = await getSubCategories();
@@ -44,9 +46,20 @@ export default async function SyllabusPage({ searchParams }: PageProps) {
                     groupParam={currentGroup}
                 />
             ) : (
-                <div className="text-center text-gray-500 py-12 bg-white dark:bg-gray-900 rounded-lg border border-dashed border-gray-300 dark:border-gray-700">
-                    Please select a category, class and subject to view or edit the syllabus.
-                </div>
+                <Paper
+                    variant="outlined"
+                    sx={{
+                        p: 6,
+                        textAlign: 'center',
+                        borderStyle: 'dashed',
+                        borderColor: 'rgba(255, 255, 255, 0.2)',
+                        bgcolor: 'rgba(255, 255, 255, 0.05)'
+                    }}
+                >
+                    <Typography color="text.secondary">
+                        Please select a category, class and subject to view or edit the syllabus.
+                    </Typography>
+                </Paper>
             )}
         </div>
     );
