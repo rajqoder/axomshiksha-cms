@@ -1,6 +1,8 @@
 import { getSubjects, getCategories, getSubCategories } from '@/actions/cms/metadata';
 import MetadataForms from '@/components/admin/MetadataForms';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MetadataPage() {
     const subjects = await getSubjects();
     const categories = await getCategories();
