@@ -27,11 +27,11 @@ function slugify(text: string) {
         .replace(/-+$/, '');            // Trim - from end of text
 }
 
-function getSyllabusPath(className: string, subject: string, group: string = 'upper-primary') {
+function getSyllabusPath(className: string, subject: string, group: string) {
     return `data/syllabus/${group}/${className}/${slugify(subject)}.json`;
 }
 
-export async function getSyllabus(className: string, subject: string, group: string = 'upper-primary') {
+export async function getSyllabus(className: string, subject: string, group: string) {
     const path = getSyllabusPath(className, subject, group);
     try {
         const data = await getFileContent<Syllabus>(path);
@@ -45,7 +45,7 @@ export async function updateSyllabus(
     className: string,
     subject: string,
     data: Syllabus,
-    group: string = 'upper-primary'
+    group: string
 ) {
     const path = getSyllabusPath(className, subject, group);
     return await saveFileContent(path, data, `Update syllabus for ${className} ${subject}`);

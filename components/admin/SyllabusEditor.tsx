@@ -2,22 +2,30 @@
 
 import { useState } from 'react';
 import { Chapter, Syllabus, updateSyllabus } from '@/actions/cms/syllabus';
-import { Plus, Trash2, Save } from 'lucide-react';
+import { Plus, Trash2, Save, BookOpen } from 'lucide-react';
+import {
+    Box, Button, TextField, Card, CardContent, Typography,
+    Snackbar, Alert, IconButton, Divider, Grid, Chip
+} from '@mui/material';
 
 interface SyllabusEditorProps {
     initialSyllabus: Syllabus | null;
     classNameParam: string;
     subjectParam: string;
+    groupParam: string;
 }
 
-export default function SyllabusEditor({ initialSyllabus, classNameParam, subjectParam }: SyllabusEditorProps) {
+export default function SyllabusEditor({ initialSyllabus, classNameParam, subjectParam, groupParam }: SyllabusEditorProps) {
     // Default structure if null
     const [syllabus, setSyllabus] = useState<Syllabus>(initialSyllabus || {
         title: '',
         title_as: '',
         chapters: []
     });
-    const [status, setStatus] = useState('');
+
+    // Status state replaced by Snackbar
+    const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
+    const [isSaving, setIsSaving] = useState(false);
 
     const handleChapterChange = (index: number, field: keyof Chapter, value: string) => {
         const newChapters = [...syllabus.chapters];
@@ -38,101 +46,135 @@ export default function SyllabusEditor({ initialSyllabus, classNameParam, subjec
     };
 
     const handleSave = async () => {
+        setIsSaving(true);
         try {
-            setStatus('Saving...');
-            await updateSyllabus(classNameParam, subjectParam, syllabus);
-            setStatus('Saved successfully!');
+            await updateSyllabus(classNameParam, subjectParam, syllabus, groupParam);
+            setSnackbar({ open: true, message: 'Saved successfully!', severity: 'success' });
         } catch (e: any) {
-            setStatus(`Error: ${e.message}`);
+            setSnackbar({ open: true, message: `Error: ${e.message}`, severity: 'error' });
+        } finally {
+            setIsSaving(false);
         }
     };
 
     return (
-        <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-800">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold">Edit Syllabus: {classNameParam} / {subjectParam}</h2>
-                <button
-                    onClick={handleSave}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                    disabled={!classNameParam || !subjectParam}
-                >
-                    <Save className="w-4 h-4" /> Save
-                </button>
-            </div>
-
-            {status && (
-                <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded">
-                    {status}
-                </div>
-            )}
-
-            {/* Main Metadata */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                <div>
-                    <label className="block text-sm font-medium mb-1">Subject Title (English)</label>
-                    <input
-                        type="text"
-                        value={syllabus.title}
-                        onChange={(e) => setSyllabus({ ...syllabus, title: e.target.value })}
-                        className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium mb-1">Subject Title (Assamese)</label>
-                    <input
-                        type="text"
-                        value={syllabus.title_as || ''}
-                        onChange={(e) => setSyllabus({ ...syllabus, title_as: e.target.value })}
-                        className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-                    />
-                </div>
-            </div>
-
-            {/* Chapters List */}
-            <div className="space-y-4">
-                <div className="flex justify-between items-center border-b pb-2 mb-4">
-                    <h3 className="font-semibold">Chapters</h3>
-                    <button
-                        onClick={addChapter}
-                        className="flex items-center gap-1 text-sm bg-green-100 text-green-700 px-3 py-1 rounded hover:bg-green-200"
-                    >
-                        <Plus className="w-3 h-3" /> Add Chapter
-                    </button>
-                </div>
-
-                {syllabus.chapters.length === 0 && (
-                    <p className="text-gray-500 italic">No chapters defined.</p>
-                )}
-
-                {syllabus.chapters.map((chapter, index) => (
-                    <div key={index} className="flex gap-4 items-start p-3 bg-gray-50 dark:bg-gray-800/50 rounded border border-gray-100 dark:border-gray-800">
-                        <span className="mt-2 text-sm text-gray-400 font-mono">#{index + 1}</span>
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <input
-                                type="text"
-                                placeholder="Chapter Title (English)"
-                                value={chapter.title}
-                                onChange={(e) => handleChapterChange(index, 'title', e.target.value)}
-                                className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Chapter Title (Assamese)"
-                                value={chapter.title_as || ''}
-                                onChange={(e) => handleChapterChange(index, 'title_as', e.target.value)}
-                                className="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700"
-                            />
-                        </div>
-                        <button
-                            onClick={() => removeChapter(index)}
-                            className="mt-2 text-red-500 hover:text-red-700"
-                            title="Remove Chapter"
+        <Box>
+            <Card sx={{
+                background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(30, 30, 30, 0.9) 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                mb: 4
+            }}>
+                <CardContent>
+                    {/* Header */}
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            <BookOpen size={24} className="text-blue-500" />
+                            <Typography variant="h6" fontWeight={600}>
+                                Edit Syllabus: {classNameParam} / {subjectParam}
+                            </Typography>
+                        </Box>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<Save />}
+                            onClick={handleSave}
+                            disabled={!classNameParam || !subjectParam || isSaving}
                         >
-                            <Trash2 className="w-5 h-5" />
-                        </button>
-                    </div>
-                ))}
-            </div>
-        </div>
+                            {isSaving ? 'Saving...' : 'Save'}
+                        </Button>
+                    </Box>
+
+                    {/* Main Metadata */}
+                    <Box sx={{ mb: 4, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                        <TextField
+                            fullWidth
+                            label="Subject Title (English)"
+                            value={syllabus.title}
+                            onChange={(e) => setSyllabus({ ...syllabus, title: e.target.value })}
+                            variant="outlined"
+                        />
+                        <TextField
+                            fullWidth
+                            label="Subject Title (Assamese)"
+                            value={syllabus.title_as || ''}
+                            onChange={(e) => setSyllabus({ ...syllabus, title_as: e.target.value })}
+                            variant="outlined"
+                        />
+                    </Box>
+
+                    <Divider sx={{ mb: 3 }} />
+
+                    {/* Chapters List */}
+                    <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle1" fontWeight={600}>
+                            Chapters
+                        </Typography>
+                        <Button
+                            variant="outlined"
+                            color="success"
+                            size="small"
+                            startIcon={<Plus />}
+                            onClick={addChapter}
+                        >
+                            Add Chapter
+                        </Button>
+                    </Box>
+
+                    {syllabus.chapters.length === 0 && (
+                        <Alert severity="info" variant="outlined" sx={{ opacity: 0.7 }}>
+                            No chapters defined. Click "Add Chapter" to begin.
+                        </Alert>
+                    )}
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {syllabus.chapters.map((chapter, index) => (
+                            <Card key={index} variant="outlined" sx={{ bgcolor: 'rgba(255,255,255,0.02)' }}>
+                                <CardContent sx={{ p: '16px !important', display: 'flex', gap: 2, alignItems: 'flex-start' }}>
+                                    <Chip label={`#${index + 1}`} size="small" variant="outlined" sx={{ mt: 1, minWidth: 40 }} />
+
+                                    <Box sx={{ flex: 1, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            label="Chapter Title (English)"
+                                            value={chapter.title}
+                                            onChange={(e) => handleChapterChange(index, 'title', e.target.value)}
+                                        />
+                                        <TextField
+                                            fullWidth
+                                            size="small"
+                                            label="Chapter Title (Assamese)"
+                                            value={chapter.title_as || ''}
+                                            onChange={(e) => handleChapterChange(index, 'title_as', e.target.value)}
+                                        />
+                                    </Box>
+
+                                    <IconButton
+                                        color="error"
+                                        onClick={() => removeChapter(index)}
+                                        size="small"
+                                        sx={{ mt: 0.5 }}
+                                    >
+                                        <Trash2 size={20} />
+                                    </IconButton>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </Box>
+                </CardContent>
+            </Card>
+
+            {/* Notification */}
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
+        </Box>
     );
 }

@@ -140,12 +140,22 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
                 border: '1px solid rgba(255, 255, 255, 0.1)'
             }}>
                 <CardContent sx={{ pb: 0 }}>
-                    <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                    <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <Tabs value={activeTab} onChange={(_, val) => setActiveTab(val)}>
                             <Tab label={tabLabel('subjects', filteredSubjects.length)} value="subjects" icon={<BookOpen size={18} />} iconPosition="start" />
                             <Tab label={tabLabel('classes', filteredClasses.length)} value="classes" icon={<Layers size={18} />} iconPosition="start" />
                             <Tab label={tabLabel('categories', Object.keys(categoriesObj).length)} value="categories" icon={<FolderOpen size={18} />} iconPosition="start" />
                         </Tabs>
+
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<Save />}
+                            onClick={() => handleSave(activeTab)}
+                            sx={{ mb: 1, mr: 1 }}
+                        >
+                            Save Changes
+                        </Button>
                     </Box>
 
                     {/* Filter Bar (Only for Subjects and Classes) */}
@@ -199,18 +209,6 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
                     )}
                 </CardContent>
             </Card>
-
-            {/* Main Action Bar */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<Save />}
-                    onClick={() => handleSave(activeTab)}
-                >
-                    Save Changes
-                </Button>
-            </Box>
 
             {/* CONTENT AREA */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
