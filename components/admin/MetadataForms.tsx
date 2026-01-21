@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Subject, CategoriesData, SubCategoriesData, updateSubjects, updateCategories, updateSubCategories, CategoryInfo } from '@/actions/cms/metadata';
 import { Save, Filter, Layers, BookOpen, FolderOpen } from 'lucide-react';
 import {
-    Box, Tabs, Tab, TextField, Select, MenuItem, Button, Card, CardContent,
-    Typography, FormControl, InputLabel, FormControlLabel, Checkbox,
-    Grid, Snackbar, Alert, Chip, Divider,
+    Box, Tabs, Tab, Select, MenuItem, Button, Card, CardContent,
+    Typography, FormControl, InputLabel, Snackbar, Alert, Chip
 } from '@mui/material';
+import SubjectCard from './SubjectCard';
+import ClassCard from './ClassCard';
+import CategoryCard from './CategoryCard';
 
 interface MetadataManagerProps {
     initialSubjects: Record<string, Subject>;
@@ -86,36 +88,40 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
         }
     };
 
-    // --- Handlers ---
-    const handleSubjectChange = (key: string, field: keyof Subject, value: any) => {
+    // --- Handlers (Memoized) ---
+    const handleSubjectChange = useCallback((key: string, field: keyof Subject, value: any) => {
         setSubjectsObj(prev => ({
             ...prev,
             [key]: { ...prev[key], [field]: value }
         }));
-    };
+    }, []);
 
-    const handleClassToggle = (subjectKey: string, classSlug: string) => {
-        const currentClasses = subjectsObj[subjectKey].classes || [];
-        const newClasses = currentClasses.includes(classSlug)
-            ? currentClasses.filter(c => c !== classSlug)
-            : [...currentClasses, classSlug];
+    const handleClassToggle = useCallback((subjectKey: string, classSlug: string) => {
+        setSubjectsObj(prev => {
+            const currentClasses = prev[subjectKey].classes || [];
+            const newClasses = currentClasses.includes(classSlug)
+                ? currentClasses.filter(c => c !== classSlug)
+                : [...currentClasses, classSlug];
+            return {
+                ...prev,
+                [subjectKey]: { ...prev[subjectKey], classes: newClasses }
+            };
+        });
+    }, []);
 
-        handleSubjectChange(subjectKey, 'classes', newClasses);
-    };
-
-    const handleSubCategoryChange = (key: string, field: keyof CategoryInfo, value: string) => {
+    const handleSubCategoryChange = useCallback((key: string, field: keyof CategoryInfo, value: string) => {
         setSubCategoriesObj(prev => ({
             ...prev,
             [key]: { ...prev[key], [field]: value }
         }));
-    };
+    }, []);
 
-    const handleCategoryChange = (key: string, field: keyof CategoryInfo, value: string) => {
+    const handleCategoryChange = useCallback((key: string, field: keyof CategoryInfo, value: string) => {
         setCategoriesObj(prev => ({
             ...prev,
             [key]: { ...prev[key], [field]: value }
         }));
-    };
+    }, []);
 
     // Reset Class filter when Category changes
     const handleFilterCategoryChange = (cat: string) => {
@@ -217,56 +223,14 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
                 {activeTab === 'subjects' && (
                     filteredSubjects.length > 0 ? (
                         filteredSubjects.map(([key, subject]) => (
-                            <Card key={key} sx={{ border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <CardContent>
-                                    <Grid container spacing={3}>
-                                        <Grid size={{ xs: 12, md: 3 }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', mb: 1, fontFamily: 'monospace' }}>
-                                                {key}
-                                            </Typography>
-                                            <TextField
-                                                fullWidth size="small" label="Display Title"
-                                                value={subject.title || ''}
-                                                onChange={(e) => handleSubjectChange(key, 'title', e.target.value)}
-                                            />
-                                            <TextField
-                                                fullWidth size="small" label="Gradient Class"
-                                                value={subject.gradient || ''}
-                                                onChange={(e) => handleSubjectChange(key, 'gradient', e.target.value)}
-                                                sx={{ mt: 2 }}
-                                                placeholder="from-x-500 to-y-500"
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 12, md: 9 }}>
-                                            <TextField
-                                                fullWidth size="small" label="Description"
-                                                value={subject.description || ''}
-                                                onChange={(e) => handleSubjectChange(key, 'description', e.target.value)}
-                                                sx={{ mb: 3 }}
-                                            />
-                                            <Divider textAlign="left" sx={{ mb: 2 }}><Typography variant="caption">AVAILABLE CLASSES</Typography></Divider>
-                                            <Box sx={{ maxHeight: 200, overflowY: 'auto', p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
-                                                <Grid container spacing={1}>
-                                                    {allClassOptions.map(cls => (
-                                                        <Grid key={cls} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-                                                            <FormControlLabel
-                                                                control={
-                                                                    <Checkbox
-                                                                        size="small"
-                                                                        checked={subject.classes?.includes(cls) || false}
-                                                                        onChange={() => handleClassToggle(key, cls)}
-                                                                    />
-                                                                }
-                                                                label={<Typography variant="caption">{cls}</Typography>}
-                                                            />
-                                                        </Grid>
-                                                    ))}
-                                                </Grid>
-                                            </Box>
-                                        </Grid>
-                                    </Grid>
-                                </CardContent>
-                            </Card>
+                            <SubjectCard
+                                key={key}
+                                subjectKey={key}
+                                subject={subject}
+                                allClassOptions={allClassOptions}
+                                onSubjectChange={handleSubjectChange}
+                                onClassToggle={handleClassToggle}
+                            />
                         ))
                     ) : (
                         <Alert severity="info" variant="outlined">No subjects found for the current filters.</Alert>
@@ -277,46 +241,13 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
                 {activeTab === 'classes' && (
                     filteredClasses.length > 0 ? (
                         filteredClasses.map(([key, subCat]) => (
-                            <Card key={key} sx={{ border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <CardContent>
-                                    <Grid container spacing={3} alignItems="center">
-                                        <Grid size={{ xs: 12, md: 3 }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontFamily: 'monospace' }}>
-                                                {key}
-                                            </Typography>
-                                        </Grid>
-                                        <Grid size={{ xs: 12, md: 3 }}>
-                                            <FormControl fullWidth size="small">
-                                                <InputLabel>Parent Category</InputLabel>
-                                                <Select
-                                                    label="Parent Category"
-                                                    value={subCat.category || ''}
-                                                    onChange={(e) => handleSubCategoryChange(key, 'category', e.target.value)}
-                                                >
-                                                    <MenuItem value=""><em>Unassigned</em></MenuItem>
-                                                    {categoryOptions.map(cat => (
-                                                        <MenuItem key={cat} value={cat}>{cat.replace(/-/g, ' ').toUpperCase()}</MenuItem>
-                                                    ))}
-                                                </Select>
-                                            </FormControl>
-                                        </Grid>
-                                        <Grid size={{ xs: 12, md: 3 }}>
-                                            <TextField
-                                                fullWidth size="small" label="Image Path"
-                                                value={subCat.image || ''}
-                                                onChange={(e) => handleSubCategoryChange(key, 'image', e.target.value)}
-                                            />
-                                        </Grid>
-                                        <Grid size={{ xs: 12, md: 3 }}>
-                                            <TextField
-                                                fullWidth size="small" label="Description"
-                                                value={subCat.description || ''}
-                                                onChange={(e) => handleSubCategoryChange(key, 'description', e.target.value)}
-                                            />
-                                        </Grid>
-                                    </Grid>
-                                </CardContent>
-                            </Card>
+                            <ClassCard
+                                key={key}
+                                classKey={key}
+                                subCat={subCat}
+                                categoryOptions={categoryOptions}
+                                onSubCategoryChange={handleSubCategoryChange}
+                            />
                         ))
                     ) : (
                         <Alert severity="info" variant="outlined">No classes found for the current filters.</Alert>
@@ -326,31 +257,12 @@ export default function MetadataForms({ initialSubjects, initialCategories, init
                 {/* --- CATEGORIES TAB --- */}
                 {activeTab === 'categories' && (
                     Object.entries(categoriesObj).map(([key, cat]) => (
-                        <Card key={key} sx={{ border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <CardContent>
-                                <Grid container spacing={3} alignItems="center">
-                                    <Grid size={{ xs: 12, md: 3 }}>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', fontFamily: 'monospace' }}>
-                                            {key}
-                                        </Typography>
-                                    </Grid>
-                                    <Grid size={{ xs: 12, md: 4 }}>
-                                        <TextField
-                                            fullWidth size="small" label="Description"
-                                            value={cat.description || ''}
-                                            onChange={(e) => handleCategoryChange(key, 'description', e.target.value)}
-                                        />
-                                    </Grid>
-                                    <Grid size={{ xs: 12, md: 5 }}>
-                                        <TextField
-                                            fullWidth size="small" label="Image Path"
-                                            value={cat.image || ''}
-                                            onChange={(e) => handleCategoryChange(key, 'image', e.target.value)}
-                                        />
-                                    </Grid>
-                                </Grid>
-                            </CardContent>
-                        </Card>
+                        <CategoryCard
+                            key={key}
+                            categoryKey={key}
+                            category={cat}
+                            onCategoryChange={handleCategoryChange}
+                        />
                     ))
                 )}
             </Box>
