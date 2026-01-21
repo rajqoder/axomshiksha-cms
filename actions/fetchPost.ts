@@ -15,64 +15,115 @@ interface PostData {
   keywords: string[] | string; // Can be string or array depending on parsing
   date: string;
   status: string;
+  author: string;
+  // Extended Metadata
+  class?: string;
+  subject?: string;
+  medium?: string;
+  chapter_title?: string;
+}
+
+// Recursively fetch all Markdown files from the repository
+async function fetchAllMarkdownFiles(octokit: Octokit, owner: string, repo: string, treeSha: string = 'HEAD'): Promise<any[]> {
+  const { data } = await octokit.rest.git.getTree({
+    owner,
+    repo,
+    tree_sha: treeSha,
+    recursive: 'true',
+  });
+
+  if (!data.tree) return [];
+
+  return data.tree.filter((item: any) =>
+    item.type === 'blob' &&
+    item.path.startsWith('content/') &&
+    item.path.endsWith('.md') &&
+    !item.path.endsWith('_index.md') &&
+    // Exclude root-level files (e.g. content/about.md) by ensuring path has subdirectories
+    item.path.split('/').length > 2
+  );
 }
 
 export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
   try {
-    // Initialize Octokit with the GitHub token
     const octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN,
     });
 
-    // Look for the file with the author's email username in the filename
-    // First, we need to get all files in the content directory to find the right filename
-    const { data: fileList } = await octokit.rest.repos.getContent({
-      owner: process.env.GITHUB_OWNER!,
-      repo: process.env.GITHUB_REPO!,
-      path: 'content',
-    });
-
-    // Filter for markdown files that match our slug pattern
-    const matchingFiles = Array.isArray(fileList)
-      ? fileList.filter(file =>
-        file.type === 'file' &&
-        file.name.endsWith('.md') &&
-        // Check if the filename starts with our slug followed by a hyphen
-        file.name.startsWith(`${slug}-`)
-      )
-      : [];
-
-    if (matchingFiles.length === 0) {
-      console.log(`No file found for slug: ${slug}`);
-      return null;
-    }
-
-    // Use the first matching file
-    const file = matchingFiles[0];
-    const filePath = `content/${file.name}`;
-
-    // Get the repository information from environment variables
     const owner = process.env.GITHUB_OWNER!;
     const repo = process.env.GITHUB_REPO!;
 
-    // Get the file content
+    // To find a file by slug, we might need to search if we don't know the author suffix or path
+    // Ideally, the slug passed here should be unique enough or we iterate.
+    // Given the new requirement <post-authorHandle.md>, the slug passed to this function 
+    // might be just 'my-post', so we need to find 'my-post-author.md'.
+
+    // Efficiently, we should list files. Since we need to support deep paths, we use recursive tree.
+    const files = await fetchAllMarkdownFiles(octokit, owner, repo);
+
+    // Find file where name starts with slug + '-'
+    // Note: This matches "slug-author.md" for slug "slug"
+    // CAUTION: If we have "slug-one-author.md", it assumes slug is "slug-one".
+    // We need to be careful. The slug passed in might be the CLEAN slug from the URL.
+
+    const matchingFile = files.find((file: any) => {
+      // Remove content/ prefix and .md extension to compare with slug
+      // The slug passed in is now "path/to/file-without-author"
+      // file.path is "content/path/to/file-with-author.md"
+
+      const filePath = file.path.replace('content/', '').replace('.md', '');
+
+      // If the file path literally contains the slug and ends with a suffix (author)
+      // We need to match precise logic.
+      // New Slug: "class-6/english/lesson-1"
+      // File Path: "class-6/english/lesson-1-author"
+
+      const isMatch = filePath.startsWith(slug) && (
+        filePath.length === slug.length ||
+        filePath.charAt(slug.length) === '-'
+      );
+
+      return isMatch;
+    });
+
+    if (!matchingFile) {
+      return null;
+    }
+
     const { data } = await octokit.rest.repos.getContent({
       owner,
       repo,
-      path: filePath,
+      path: matchingFile.path,
     });
 
-    // Decode the content
-    const encodedContent = (data as any).content;
-    const decodedContent = Buffer.from(encodedContent, 'base64').toString('utf-8');
+    if (Array.isArray(data) || !('content' in data)) {
+      return null;
+    }
 
-    // Parse the frontmatter and content
+    const encodedContent = data.content;
+    const decodedContent = Buffer.from(encodedContent, 'base64').toString('utf-8');
     const { frontmatter, content } = parseFrontmatter(decodedContent);
 
-    // Convert the frontmatter to the expected format
+    // Get author from filename
+    const parts = matchingFile.path.split('/');
+    const fileName = parts[parts.length - 1];
+    const fileNameWithoutExt = fileName.replace('.md', '');
+
+    // We need to extract author from the filename regardless of the directory in slug
+    // fileNameWithoutExt is "lesson-1-author"
+    // We can just take the last part after hyphen? 
+    // BUT what if slug itself has hyphens? "lesson-1"
+
+    const lastHyphenIndex = fileNameWithoutExt.lastIndexOf('-');
+    let authorHandle = '';
+    if (lastHyphenIndex !== -1) {
+      authorHandle = fileNameWithoutExt.substring(lastHyphenIndex + 1);
+    }
+
+
     const postData: PostData = {
       title: frontmatter.title || '',
-      slug: frontmatter.slug || slug, // Use slug from frontmatter if available, otherwise use the passed slug
+      slug: slug,
       description: frontmatter.description || '',
       category: Array.isArray(frontmatter.categories) ? frontmatter.categories[0] || '' : (typeof frontmatter.categories === 'string' ? frontmatter.categories : ''),
       content: content,
@@ -82,7 +133,44 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
       keywords: Array.isArray(frontmatter.keywords) ? frontmatter.keywords : (typeof frontmatter.keywords === 'string' ? [frontmatter.keywords] : []),
       date: frontmatter.date || new Date().toISOString(),
       status: frontmatter.draft ? 'Draft' : 'Published',
+      author: authorHandle
     };
+
+    // Parse Path for Metadata
+    // Structure: content/<class>/<subject>/[<medium>]/<filename>
+    const pathParts = parts.slice(1); // Remove "content" -> ["class-6", "english", "..."]
+
+    let classSlug = '';
+    let subjectSlug = '';
+    let mediumSlug = '';
+
+    // Basic Heuristic: If we have at least 2 dirs, 1st is likely class, 2nd likely subject
+    if (pathParts.length >= 2) {
+      // e.g. class-6/english/file.md -> class=class-6, subject=english
+      // or class-6/english/assamese-medium/file.md -> class=class-6, subject=english, medium=assamese
+      classSlug = pathParts[0];
+
+      // Check if 2nd part is subject
+      if (!pathParts[1].endsWith('.md')) {
+        subjectSlug = pathParts[1];
+      }
+
+      // Check if 3rd part is medium
+      if (pathParts.length >= 3 && !pathParts[2].endsWith('.md')) {
+        // likely medium folder
+        const mediumFolder = pathParts[2]; // e.g. "assamese-medium"
+        mediumSlug = mediumFolder.replace('-medium', '');
+      }
+    }
+
+    // Priority: Frontmatter Params > Path Inference
+    // Some posts might explicitly save these in params
+    const params = frontmatter.params || {};
+
+    postData.class = params.class || classSlug;
+    postData.subject = params.subject || subjectSlug;
+    postData.medium = params.medium || mediumSlug;
+    postData.chapter_title = params.chapter_title || '';
 
     return postData;
   } catch (error) {
@@ -146,7 +234,6 @@ function parseFrontmatter(content: string) {
 
 export async function getAllPosts(filterByCurrentUser: boolean = false): Promise<PostData[]> {
   try {
-    // Get the current user session to retrieve user information
     const supabase = await createClient();
 
     let userEmailUsername = null;
@@ -155,52 +242,71 @@ export async function getAllPosts(filterByCurrentUser: boolean = false): Promise
       userEmailUsername = user.email.split('@')[0];
     }
 
-    // Initialize Octokit with the GitHub token
     const octokit = new Octokit({
       auth: process.env.GITHUB_TOKEN,
     });
 
-    // Get the repository information from environment variables
     const owner = process.env.GITHUB_OWNER!;
     const repo = process.env.GITHUB_REPO!;
 
-    // Get all files in the content directory
-    const { data } = await octokit.rest.repos.getContent({
-      owner,
-      repo,
-      path: 'content',
-    });
+    // Recursively fetch all markdown files
+    const allMarkdownFiles = await fetchAllMarkdownFiles(octokit, owner, repo);
 
     const posts: PostData[] = [];
 
-    if (Array.isArray(data)) {
-      // Filter for markdown files
-      let markdownFiles = data.filter(item =>
-        item.type === 'file' && item.name.endsWith('.md')
-      );
+    // Filter and process files
+    for (const file of allMarkdownFiles) {
+      // New Logic: Slug includes directory structure relative to content/
+      // file.path = "content/class-6/english/lesson-1-author.md"
 
-      // If filtering by current user, filter files by the author in filename
-      if (filterByCurrentUser && userEmailUsername) {
-        markdownFiles = markdownFiles.filter(file => {
-          const fileNameWithoutExt = file.name.replace('.md', '');
-          return fileNameWithoutExt.endsWith(`-${userEmailUsername}`);
-        });
+      const relativePath = file.path.replace('content/', '').replace('.md', '');
+      // relativePath = "class-6/english/lesson-1-author"
+
+      const lastHyphenIndex = relativePath.lastIndexOf('-');
+
+      let authorHandle = '';
+      let slug = relativePath;
+
+      if (lastHyphenIndex !== -1) {
+        authorHandle = relativePath.substring(lastHyphenIndex + 1);
+        slug = relativePath.substring(0, lastHyphenIndex);
       }
 
-      // Fetch content for each markdown file
-      for (const file of markdownFiles) {
-        const fileNameWithoutExt = file.name.replace('.md', '');
-        // Extract the original slug from the filename (before the last hyphen and email username)
-        const lastHyphenIndex = fileNameWithoutExt.lastIndexOf('-');
-        const slug = lastHyphenIndex !== -1 ? fileNameWithoutExt.substring(0, lastHyphenIndex) : fileNameWithoutExt;
-
-        const postData = await fetchPostBySlug(slug);
-        if (postData) {
-          // Update the slug in the returned data to use the slug from frontmatter if available
-          // This ensures we're using the intended slug for the post, not derived from filename
-          posts.push(postData);
+      // Filter by user if requested
+      if (filterByCurrentUser && userEmailUsername) {
+        if (authorHandle !== userEmailUsername) {
+          continue;
         }
       }
+
+      // Fetch content (optimization: parallelize this?)
+      // For now, doing it sequentially to be safe with rate limits, or we could Promise.all batches
+      const { data } = await octokit.rest.repos.getContent({
+        owner,
+        repo,
+        path: file.path,
+      });
+
+      if (Array.isArray(data) || !('content' in data)) continue;
+
+      const encodedContent = data.content;
+      const decodedContent = Buffer.from(encodedContent, 'base64').toString('utf-8');
+      const { frontmatter, content } = parseFrontmatter(decodedContent);
+
+      posts.push({
+        title: frontmatter.title || slug,
+        slug: slug,
+        description: frontmatter.description || '',
+        category: Array.isArray(frontmatter.categories) ? frontmatter.categories[0] || '' : (typeof frontmatter.categories === 'string' ? frontmatter.categories : ''),
+        content: content,
+        published: !frontmatter.draft,
+        readingTime: typeof frontmatter.readingTime === 'number' ? frontmatter.readingTime : parseInt(frontmatter.readingTime) || 5,
+        thumbnail: frontmatter.thumbnail || '',
+        keywords: Array.isArray(frontmatter.keywords) ? frontmatter.keywords : (typeof frontmatter.keywords === 'string' ? [frontmatter.keywords] : []),
+        date: frontmatter.date || new Date().toISOString(),
+        status: frontmatter.draft ? 'Draft' : 'Published',
+        author: authorHandle
+      });
     }
 
     return posts;

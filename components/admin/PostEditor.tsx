@@ -42,8 +42,8 @@ interface AdminFormData {
 }
 
 const MEDIUM_OPTIONS = [
-    { label: 'English Medium', value: 'english' },
-    { label: 'Assamese Medium', value: 'assamese' },
+    { label: 'English', value: 'english' },
+    { label: 'Assamese', value: 'assamese' },
 ];
 
 export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
@@ -70,6 +70,8 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
     const selectedSubject = watch('subject');
     const selectedMedium = watch('medium');
 
+    const isLanguageSubject = selectedSubject ? subjects[selectedSubject]?.isLanguageSubject : false;
+
     // Cascading Logic: Reset downstream fields
     useEffect(() => {
         setValue('class', '');
@@ -83,6 +85,13 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
         setValue('chapter_title', '');
         setSyllabus(null);
     }, [selectedClass, setValue]);
+
+    // Automatically clear medium if language subject is selected (Optional enhancement, but ensures clean state)
+    useEffect(() => {
+        if (isLanguageSubject) {
+            setValue('medium', '');
+        }
+    }, [isLanguageSubject, setValue]);
 
     // Fetch Syllabus when Class/Subject changes
     useEffect(() => {
@@ -186,7 +195,7 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
                                         </Select>
                                     </FormControl>
 
-                                    <FormControl fullWidth size="small">
+                                    <FormControl fullWidth size="small" disabled={!!isLanguageSubject}>
                                         <InputLabel>Medium</InputLabel>
                                         <Select label="Medium" {...register('medium')} value={selectedMedium} onChange={e => setValue('medium', e.target.value)}>
                                             {MEDIUM_OPTIONS.map(m => <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>)}

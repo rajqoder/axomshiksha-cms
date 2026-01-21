@@ -29,22 +29,23 @@ interface PostData {
 }
 
 const PostDetailPage = () => {
-  const { filename } = useParams();
+  const params = useParams();
+  const slug = params.slug;
   const [post, setPost] = useState<PostData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadPost = async () => {
-      if (filename) {
-        const slug = Array.isArray(filename) ? filename[0] : filename;
-        const postData = await fetchPostBySlug(slug);
+      if (slug) {
+        const slugStr = Array.isArray(slug) ? slug.join('/') : slug;
+        const postData = await fetchPostBySlug(slugStr);
         setPost(postData);
         setLoading(false);
       }
     };
 
     loadPost();
-  }, [filename]);
+  }, [slug]);
 
   if (loading) {
     return (
@@ -90,7 +91,7 @@ const PostDetailPage = () => {
           <Button variant="contained" component={Link} href="/posts">
             Back to Posts
           </Button>
-          <Button variant="outlined" component={Link} href={`/posts/${post.slug}/edit`}>
+          <Button variant="outlined" component={Link} href={`/posts/edit/${post.slug}`}>
             Edit Post
           </Button>
         </CardActions>

@@ -48,13 +48,11 @@ const processChildrenForShortcodes = (
     if (hasFlexEnd) previewFlexDepth = Math.max(0, previewFlexDepth - 1);
 
     // If no shortcodes or we're inside a flex block, return raw text with preserved line breaks
+    // If no shortcodes or we're inside a flex block, return raw text
+    // We removed the span with whitespace: pre-wrap to allow standard markdown newline handling
+    // (e.g. two spaces for <br>, otherwise folded)
     if (!hasShortcodes || insideFlex) {
-      // Wrap in a span with pre-wrap to preserve line breaks
-      return (
-        <span style={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace', fontSize: '0.875rem' }}>
-          {text}
-        </span>
-      );
+      return <>{text}</>;
     }
 
     const rendered = parseAndRenderShortcodes(text);
@@ -72,15 +70,68 @@ const processChildrenForShortcodes = (
       return renderWithProcessed(processed);
     }
   } else if (Array.isArray(children)) {
-    const hasShortcodes = children.some(
-      (child) => typeof child === 'string' && /\{\{<[\s\S]*?>\}\}/.test(child)
-    );
+    const newChildren: React.ReactNode[] = [];
+    let i = 0;
+    let hasChanges = false;
 
-    if (hasShortcodes) {
-      const processedChildren = children.map((child) =>
-        typeof child === 'string' ? processTextSegment(child) : child
-      );
-      return renderWithProcessed(processedChildren);
+    while (i < children.length) {
+      const child = children[i];
+      const nextChild = children[i + 1];
+      const nextNextChild = children[i + 2];
+
+      // Check for split shortcodes: Text ending in {{ + Element + Text starting with }}
+      // This happens when user types {{<shortcode>}} without space after {{<
+      const isSplitShortcode =
+        typeof child === 'string' && child.trim().endsWith('{{') &&
+        React.isValidElement(nextChild) &&
+        ['content-box', 'empty-box', 'line', 'flex', 'underscored-space'].includes((nextChild.type as string)) &&
+        typeof nextNextChild === 'string' && nextNextChild.trim().startsWith('}}');
+
+      if (isSplitShortcode) {
+        hasChanges = true;
+        const tagName = (nextChild as React.ReactElement).type as string;
+        const props = (nextChild as React.ReactElement).props as any;
+
+        // Reconstruct params
+        const params = Object.entries(props)
+          .map(([k, v]) => `${k}="${v}"`)
+          .join(' ');
+
+        const shortcode = `{{< ${tagName} ${params} >}}`;
+        const rendered = parseAndRenderShortcodes(shortcode);
+
+        // Handle prefix (remove last {{)
+        // Note: we use lastIndexOf because trim() might have ignored trailing spaces in check, but we need to slice correctly.
+        // But for safety, let's assume standard case {{<tag
+        const prefixIndex = child.lastIndexOf('{{');
+        const prefix = child.substring(0, prefixIndex);
+
+        // Handle suffix (remove first }})
+        const suffixIndex = nextNextChild.indexOf('}}') + 2;
+        const suffix = nextNextChild.substring(suffixIndex);
+
+        if (prefix) newChildren.push(processTextSegment(prefix));
+        newChildren.push(rendered);
+        if (suffix) newChildren.push(processTextSegment(suffix));
+
+        i += 3;
+      } else {
+        // Standard processing
+        if (typeof child === 'string') {
+          const processed = processTextSegment(child);
+          if (processed !== child) hasChanges = true;
+          newChildren.push(processed);
+        } else {
+          newChildren.push(child);
+        }
+        i++;
+      }
+    }
+
+    if (hasChanges) {
+      return renderWithProcessed(newChildren.map((child, idx) => (
+        <React.Fragment key={idx}>{child}</React.Fragment>
+      )));
     }
   }
 
@@ -346,7 +397,13 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ val
           components: {
             // Process shortcodes in paragraph content
             p: ({ children, ...props }: any) => {
-              return processChildrenForShortcodes(children, (processed) => <p {...props}>{processed}</p>, <p {...props}>{children}</p>);
+              // Use div instead of p when shortcodes are present to avoid hydration errors
+              // (div cannot be descendant of p) since shortcodes often render block elements
+              return processChildrenForShortcodes(
+                children,
+                (processed) => <div {...props}>{processed}</div>,
+                <p {...props}>{children}</p>
+              );
             },
             // Handle shortcodes in list items
             li: ({ children, ...props }: any) => {
@@ -359,7 +416,13 @@ const MarkdownEditor = forwardRef<MarkdownEditorRef, MarkdownEditorProps>(({ val
             em: ({ children, ...props }: any) => {
               return processChildrenForShortcodes(children, (processed) => <em {...props}>{processed}</em>, <em {...props}>{children}</em>);
             },
-          },
+            // Handle custom flex tag if user uses it
+            flex: ({ children, style, ...props }: any) => (
+              <Box sx={{ display: 'flex', ...style }} {...props}>
+                {children}
+              </Box>
+            ),
+          } as any,
           remarkPlugins: [remarkGfm],
         }}
       />

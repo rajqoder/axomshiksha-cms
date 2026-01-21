@@ -25,9 +25,6 @@ const Header = () => {
           <Link href="/posts" className="header-nav-link">
             Posts
           </Link>
-          <Link href="/new-post" className="header-nav-link">
-            New Post
-          </Link>
           <UserProfileDropdown />
         </nav>
 

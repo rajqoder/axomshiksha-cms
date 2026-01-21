@@ -61,40 +61,60 @@ export async function createPost(formData: FormData) {
 
     // Ensure slug doesn't already have the extension
     const cleanSlug = formData.slug.replace(/\.md$/, '');
-    const fileName = `${cleanSlug}.md`;
 
     // Date Format
     const currentDate = new Date();
-    const dateString = currentDate.toISOString().split(".")[0]+"+05:30";
+    const dateString = currentDate.toISOString().split(".")[0] + "+05:30";
 
+    // Check if slug contains directory path (e.g. from editing an existing deep file)
+    const hasPath = cleanSlug.includes('/') || cleanSlug.includes('\\');
+
+    let fileName = '';
     let filePath = '';
 
-    // Check if this is an academic post with full taxonomy
     if (formData.class && formData.subject) {
-      // Slugify Class and Subject for Folders
+      // Academic Post with Taxonomy: Construct path from Metadata
+      // This allows "moving" the post if class/subject changes
+
+      // Ensure slug is just the filename part if we are using metadata to drive structure
+      let fileNameSlug = cleanSlug;
+      if (fileNameSlug.includes('/') || fileNameSlug.includes('\\')) {
+        const parts = fileNameSlug.split(/[/\\]/);
+        fileNameSlug = parts[parts.length - 1]; // Take last part
+      }
+
+      fileName = `${fileNameSlug}-${username}.md`;
+
+      // Slugify Class and Subject
       const classSlug = slugify(formData.class);
-      // Ensure subject is slugified (lowercase, hyphens)
       const subjectSlug = slugify(formData.subject);
 
       // Ensure directory indices exist
-      // 1. Class Folder Index
       await ensureIndexFile(`content/${classSlug}`, unslugify(classSlug), dateString);
-
-      // 2. Subject Folder Index
       await ensureIndexFile(`content/${classSlug}/${subjectSlug}`, unslugify(subjectSlug), dateString);
 
       // Construct Path
       let folderPath = `content/${classSlug}/${subjectSlug}`;
 
-      if (formData.medium) {
-        // Medium folder if present
+      if (formData.medium && formData.medium !== 'english') {
         const mediumFolder = formData.medium.endsWith('-medium') ? formData.medium : `${formData.medium}-medium`;
         folderPath += `/${mediumFolder}`;
       }
 
       filePath = `${folderPath}/${fileName}`;
+
+    } else if (hasPath) {
+      // Manual Path Override (Legacy or advanced use)
+      const normalized = cleanSlug.replace(/\\/g, '/');
+      const lastSlash = normalized.lastIndexOf('/');
+      const dir = normalized.substring(0, lastSlash);
+      const name = normalized.substring(lastSlash + 1);
+
+      fileName = `${name}-${username}.md`;
+      filePath = `content/${dir}/${fileName}`;
     } else {
       // Fallback for generic posts
+      fileName = `${cleanSlug}-${username}.md`;
       const folder = formData.category ? formData.category.toLowerCase().replace(/\s+/g, '-') : 'posts';
       filePath = `content/${folder}/${fileName}`;
     }

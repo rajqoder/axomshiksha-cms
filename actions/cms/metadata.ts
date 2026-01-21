@@ -8,6 +8,7 @@ export interface Subject {
     description?: string;
     title?: string;
     classes?: string[]; // Valid Classes for this subject
+    isLanguageSubject?: boolean;
 }
 
 export interface CategoryInfo {

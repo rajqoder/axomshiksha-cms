@@ -109,7 +109,7 @@ const PostsPage = () => {
         <Stack direction={'row'} spacing={1} alignItems="center">
           <IconButton
             component={Link}
-            href={`/posts/${params.row.slug}/edit`}
+            href={`/posts/edit/${params.row.slug}`}
             sx={{ mr: 1 }}
           >
             <Edit />
