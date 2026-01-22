@@ -13,8 +13,17 @@ import {
     IconButton
 } from '@mui/material';
 import { getAllPosts } from '../../actions/fetchPost';
+import { deletePost } from '../../actions/deletePost';
 import Link from 'next/link';
-import { Edit } from 'lucide-react';
+import { Edit, Trash } from 'lucide-react';
+import {
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogContentText,
+    DialogTitle,
+    Button
+} from '@mui/material';
 
 interface PostData {
     title: string;
@@ -34,6 +43,39 @@ interface PostData {
 export default function AdminDashboard() {
     const [posts, setPosts] = useState<PostData[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [postToDelete, setPostToDelete] = useState<{
+        slug: string;
+        title: string;
+    } | null>(null);
+
+    const handleDeleteClick = (slug: string, title: string) => {
+        setPostToDelete({ slug, title });
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!postToDelete) return;
+
+        try {
+            const result = await deletePost(postToDelete.slug);
+            if (result.success) {
+                // Refresh posts
+                const data = await getAllPosts(false);
+                setPosts(data);
+                alert(result.message);
+            } else {
+                alert(result.message);
+            }
+        } catch (error) {
+            console.error("Error deleting post:", error);
+            alert("Failed to delete post");
+        } finally {
+            setDeleteDialogOpen(false);
+            setPostToDelete(null);
+        }
+    };
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -97,13 +139,25 @@ export default function AdminDashboard() {
             headerName: 'Actions',
             flex: 0.2,
             renderCell: (params: GridRenderCellParams) => (
-                <IconButton
-                    component={Link}
-                    href={`/posts/edit/${params.row.slug}`}
-                    size="small"
-                >
-                    <Edit size={16} />
-                </IconButton>
+                <Stack direction="row" spacing={1} alignItems="center">
+                    <IconButton
+                        component={Link}
+                        href={`/posts/edit/${params.row.slug}`}
+                        size="small"
+                    >
+                        <Edit size={16} />
+                    </IconButton>
+                    <IconButton
+                        color="error"
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(params.row.slug, params.row.title);
+                        }}
+                    >
+                        <Trash size={16} />
+                    </IconButton>
+                </Stack>
             )
         }
     ];
@@ -167,6 +221,24 @@ export default function AdminDashboard() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+
+
+            {/* Delete confirmation */}
+            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+                <DialogTitle>Confirm Delete</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Are you sure you want to delete “{postToDelete?.title}”? This action
+                        cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleDeleteConfirm} color="error" autoFocus>
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </div >
     );
 }

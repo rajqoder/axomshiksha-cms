@@ -34,6 +34,16 @@ export async function proxy(req: NextRequest) {
         return NextResponse.redirect(new URL('/', req.url));
       }
     }
+
+    // Redirect Admin from /posts to /admin
+    if (pathName === '/posts') {
+      const userEmail = session.user.email;
+      const writer = Object.values(writers).find((w: any) => w.email === userEmail) as any;
+
+      if (writer && writer.role === 'admin') {
+        return NextResponse.redirect(new URL('/admin', req.url));
+      }
+    }
   }
 
   return NextResponse.next();

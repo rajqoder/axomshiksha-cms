@@ -609,7 +609,7 @@ const EditPostPage = () => {
                                                 background: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
                                             }}
                                         >
-                                            {isSubmitting ? 'Saving...' : 'Save Draft'}
+                                            {isSubmitting ? 'Saving...' : 'Draft'}
                                         </Button>
                                         <Button
                                             type="button"
