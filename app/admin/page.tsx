@@ -10,13 +10,7 @@ import {
     Chip,
     Avatar,
     Stack,
-    IconButton
-} from '@mui/material';
-import { getAllPosts } from '../../actions/fetchPost';
-import { deletePost } from '../../actions/deletePost';
-import Link from 'next/link';
-import { Edit, Trash } from 'lucide-react';
-import {
+    IconButton,
     Dialog,
     DialogActions,
     DialogContent,
@@ -24,6 +18,10 @@ import {
     DialogTitle,
     Button
 } from '@mui/material';
+import { getAllPosts } from '../../actions/fetchPost';
+import { deletePost } from '../../actions/deletePost';
+import Link from 'next/link';
+import { Edit, Trash } from 'lucide-react';
 
 interface PostData {
     title: string;
@@ -104,17 +102,11 @@ export default function AdminDashboard() {
             width: 400,
             renderCell: (params: GridRenderCellParams) => {
                 const row = params.row as PostData;
-                // Construct external URL: axomshiksha.com/<class>/<subject>/<medium>/<post-slug>
-                // row.slug contains "class/subject/post-slug"
-                // explicit fields class/subject/medium are available from fetchPost
-
                 let externalUrl = '#';
                 if (row.class && row.subject) {
-                    // Extract the leaf slug from the full slug path if needed
                     const leafSlug = row.slug.split('/').pop() || row.slug;
                     externalUrl = `https://axomshiksha.com/${row.class}/${row.subject}/${row.medium || 'english'}/${leafSlug}`;
                 } else {
-                    // Fallback using raw slug if metadata is missing
                     externalUrl = `https://axomshiksha.com/${row.slug}`;
                 }
 
@@ -274,6 +266,6 @@ export default function AdminDashboard() {
                     </Button>
                 </DialogActions>
             </Dialog>
-        </div >
+        </div>
     );
 }

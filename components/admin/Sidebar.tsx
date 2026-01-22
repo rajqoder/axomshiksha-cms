@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, BookOpen, Layers, Settings } from 'lucide-react';
+import { LayoutDashboard, FileText, BookOpen, Layers, Settings, Users } from 'lucide-react';
 import { Box, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Paper, useTheme } from '@mui/material';
 
 const menuItems = [
@@ -10,6 +10,7 @@ const menuItems = [
     { name: 'New Post', href: '/admin/posts/new', icon: FileText },
     { name: 'Syllabus', href: '/admin/syllabus', icon: BookOpen },
     { name: 'Metadata', href: '/admin/metadata', icon: Layers },
+    { name: 'Authors', href: '/admin/authors', icon: Users },
 ];
 
 export function AdminSidebar() {

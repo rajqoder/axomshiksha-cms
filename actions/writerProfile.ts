@@ -19,6 +19,8 @@ export interface WriterProfile {
     social_links: SocialLink[];
     image?: string; // Optional: for future use or if we want to store avatar URL
     email?: string;
+    role?: 'admin' | 'author';
+    isVerifiedByAdmin?: boolean;
 }
 
 export async function getWriterProfile(): Promise<{ success: boolean; data?: WriterProfile; message?: string }> {
@@ -129,7 +131,7 @@ export async function updateWriterProfile(profileData: WriterProfile): Promise<{
         }
 
         const { ...dataToSave } = profileData;
-        
+
         currentData[username] = {
             ...currentData[username], // Keep existing fields if any
             ...dataToSave,

@@ -5,17 +5,19 @@ import { Controller, useForm } from 'react-hook-form';
 import {
     Box, Button, TextField, FormControl, InputLabel, Select, MenuItem,
     Snackbar, Alert, Card, CardContent,
-    Typography, Divider
+    Typography, Divider, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import KeywordsInput from '@/components/KeywordsInput';
 import MarkdownEditor, { MarkdownEditorRef } from '@/components/MarkdownEditor';
 import ShortcodeToolbar from '@/components/ShortcodeToolbar';
 import { FileText, Save, Send, Layers } from 'lucide-react';
+import Link from 'next/link';
 
 // Actions
 import { createPost } from '@/actions/createPost';
 import { getSyllabus, Syllabus } from '@/actions/cms/syllabus';
 import { Subject, Taxonomy } from '@/actions/cms/metadata';
+import { getWriterProfile, WriterProfile } from '@/actions/writerProfile';
 
 interface PostEditorProps {
     subjects: Record<string, Subject>;
@@ -54,6 +56,21 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
     // Dynamic Syllabus State
     const [syllabus, setSyllabus] = useState<Syllabus | null>(null);
     const [loadingSyllabus, setLoadingSyllabus] = useState(false);
+
+    // Verification State
+    const [authorProfile, setAuthorProfile] = useState<WriterProfile | null>(null);
+    const [profileLoading, setProfileLoading] = useState(true);
+    const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
+    const [profileMissingDialogOpen, setProfileMissingDialogOpen] = useState(false);
+
+    useEffect(() => {
+        getWriterProfile().then(res => {
+            if (res.success && res.data) {
+                setAuthorProfile(res.data);
+            }
+        }).catch(err => console.error("Failed to load profile", err))
+            .finally(() => setProfileLoading(false));
+    }, []);
 
     const { control, register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<AdminFormData>({
         defaultValues: {
@@ -137,6 +154,33 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
         setSnackbar({ open: true, message: "Please fill all required fields", severity: 'error' });
     };
 
+    // Verification Wrappers
+    const handlePublishClick = (formData: AdminFormData) => {
+        if (!authorProfile || !authorProfile.bio) {
+            setProfileMissingDialogOpen(true);
+            return;
+        }
+
+        // Check if user is admin (implicitly verified) OR verified by admin
+        const isAdmin = authorProfile.role === 'admin';
+        const isVerified = authorProfile.isVerifiedByAdmin;
+
+        if (!isAdmin && !isVerified) {
+            setVerificationDialogOpen(true);
+            return;
+        }
+
+        onSubmit({ ...formData, published: true });
+    };
+
+    const handleDraftClick = (formData: AdminFormData) => {
+        if (!authorProfile || !authorProfile.bio) {
+            setProfileMissingDialogOpen(true);
+            return;
+        }
+        onSubmit({ ...formData, published: false });
+    };
+
     // Derived Options
     const categoryOptions = Object.keys(taxonomy || {});
     const classOptions = selectedCategory ? Object.keys(taxonomy[selectedCategory] || {}) : [];
@@ -144,7 +188,7 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
 
     return (
         <Box sx={{ maxWidth: '1600px', mx: 'auto', pb: 4 }}>
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form onSubmit={e => e.preventDefault()}>
                 <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', lg: 'row' } }}>
 
                     {/* Main Content (Editor) */}
@@ -281,7 +325,7 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
                                     <Button
                                         fullWidth variant="contained"
                                         type="button"
-                                        onClick={handleSubmit(d => onSubmit({ ...d, published: false }), onError)}
+                                        onClick={handleSubmit(handleDraftClick, onError)}
                                         disabled={isSubmitting}
                                         startIcon={<Save />}
                                     >
@@ -290,7 +334,7 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
                                     <Button
                                         fullWidth variant="contained" color="secondary"
                                         type="button"
-                                        onClick={handleSubmit(d => onSubmit({ ...d, published: true }), onError)}
+                                        onClick={handleSubmit(handlePublishClick, onError)}
                                         disabled={isSubmitting}
                                         startIcon={<Send />}
                                     >
@@ -302,6 +346,35 @@ export default function PostEditor({ subjects, taxonomy }: PostEditorProps) {
                     </Box>
                 </Box>
             </form>
+
+            {/* Profile Missing Dialog */}
+            <Dialog open={profileMissingDialogOpen} onClose={() => setProfileMissingDialogOpen(false)}>
+                <DialogTitle>Profile Required</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        You need to complete your "bio" in your profile before you can contribute content.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setProfileMissingDialogOpen(false)}>Cancel</Button>
+                    <Link href="/profile" passHref style={{ textDecoration: 'none' }}>
+                        <Button variant="contained" autoFocus>Go to Profile</Button>
+                    </Link>
+                </DialogActions>
+            </Dialog>
+
+            {/* Verification Dialog */}
+            <Dialog open={verificationDialogOpen} onClose={() => setVerificationDialogOpen(false)}>
+                <DialogTitle>Verification Required</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        Your account is not yet verified by an admin. You can save drafts, but you cannot publish posts until you are verified.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setVerificationDialogOpen(false)} autoFocus>OK</Button>
+                </DialogActions>
+            </Dialog>
 
             <Snackbar
                 open={snackbar.open}
