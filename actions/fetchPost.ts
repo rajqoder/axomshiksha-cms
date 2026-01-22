@@ -182,6 +182,7 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
 // Helper function to parse frontmatter from markdown content
 function parseFrontmatter(content: string) {
   // Regular expression to match TOML frontmatter (Hugo format)
+  // Matches content between +++ and +++
   const frontmatterRegex = /^\+{3}\n([\s\S]*?)\n\+{3}\n?([\s\S]*)/;
   const match = content.match(frontmatterRegex);
 
@@ -189,37 +190,82 @@ function parseFrontmatter(content: string) {
     const frontmatterStr = match[1];
     const contentStr = match[2] || '';
 
-    // Parse TOML frontmatter manually - define as any initially to allow different types
+    // Parse TOML frontmatter manually
     const frontmatter: Record<string, any> = {};
+    let currentSection: string | null = null;
 
-    // Split by newlines and parse key-value pairs
+    // Split by newlines
     const lines = frontmatterStr.split('\n');
-    for (const line of lines) {
-      const colonIndex = line.indexOf('=');
-      if (colonIndex > 0) {
-        const key = line.substring(0, colonIndex).trim();
-        let value: any = line.substring(colonIndex + 1).trim();
 
-        // Remove quotes and handle arrays
-        if (value.startsWith('"') && value.endsWith('"')) {
-          value = value.substring(1, value.length - 1);
-        } else if (value.startsWith('[') && value.endsWith(']')) {
-          // Parse array format: ["tag1", "tag2"]
-          const arrayContent = value.substring(1, value.length - 1);
-          value = arrayContent
-            .split(',')
-            .map((item: string) => item.trim().replace(/"/g, ''))
-            .filter((item: string) => item.length > 0);
-        } else if (value === 'true') {
-          value = true;
-        } else if (value === 'false') {
-          value = false;
-        } else if (!isNaN(Number(value))) {
-          // Convert numeric strings to numbers
-          value = Number(value);
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line || line.startsWith('#')) continue;
+
+      // Check for section header [section]
+      if (line.startsWith('[') && line.endsWith(']')) {
+        const sectionName = line.substring(1, line.length - 1).trim();
+        // Handle array of tables e.g. [[menu.main]] - simplified: just ignore or treat as unique key if needed
+        // For this use case, we only need basic [params] support
+        if (sectionName) {
+          currentSection = sectionName;
+          if (!frontmatter[currentSection]) {
+            frontmatter[currentSection] = {};
+          }
+        }
+        continue;
+      }
+
+      const equalIndex = line.indexOf('=');
+      if (equalIndex > 0) {
+        const key = line.substring(0, equalIndex).trim();
+        let valueStr = line.substring(equalIndex + 1).trim();
+        let value: any = valueStr;
+
+        // Handle multi-line arrays
+        if (valueStr.startsWith('[') && !valueStr.endsWith(']')) {
+          // Read ahead until we find the closing bracket
+          let accumulated = valueStr;
+          let nextIdx = i + 1;
+          while (nextIdx < lines.length) {
+            const nextLine = lines[nextIdx].trim();
+            if (!nextLine || nextLine.startsWith('#')) {
+              nextIdx++;
+              continue;
+            }
+            accumulated += " " + nextLine;
+            i = nextIdx; // Advance outer loop
+            if (nextLine.endsWith(']')) break;
+            nextIdx++;
+          }
+          valueStr = accumulated;
         }
 
-        frontmatter[key] = value;
+        // Value Parsing
+        if (valueStr.startsWith('"') && valueStr.endsWith('"')) {
+          value = valueStr.substring(1, valueStr.length - 1);
+        } else if (valueStr.startsWith("'") && valueStr.endsWith("'")) {
+          value = valueStr.substring(1, valueStr.length - 1);
+        } else if (valueStr.startsWith('[') && valueStr.endsWith(']')) {
+          // Parse array format: ["tag1", "tag2"]
+          const arrayContent = valueStr.substring(1, valueStr.length - 1);
+          value = arrayContent
+            .split(',')
+            .map((item: string) => item.trim().replace(/^["']|["']$/g, ''))
+            .filter((item: string) => item.length > 0);
+        } else if (valueStr === 'true') {
+          value = true;
+        } else if (valueStr === 'false') {
+          value = false;
+        } else if (!isNaN(Number(valueStr))) {
+          value = Number(valueStr);
+        }
+
+        // Assign to current section or root
+        if (currentSection && frontmatter[currentSection]) {
+          frontmatter[currentSection][key] = value;
+        } else {
+          frontmatter[key] = value;
+        }
       }
     }
 

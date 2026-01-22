@@ -38,6 +38,10 @@ interface PostData {
     date: string;
     status: string;
     author: string;
+    // Extended Metadata for external linking
+    class?: string;
+    subject?: string;
+    medium?: string;
 }
 
 export default function AdminDashboard() {
@@ -97,20 +101,39 @@ export default function AdminDashboard() {
         {
             field: 'title',
             headerName: 'Title',
-            flex: 1,
-            renderCell: (params: GridRenderCellParams) => (
-                <Link
-                    href={`/posts/${params.row.slug}`}
-                    style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
-                >
-                    {params.value}
-                </Link>
-            )
+            width: 400,
+            renderCell: (params: GridRenderCellParams) => {
+                const row = params.row as PostData;
+                // Construct external URL: axomshiksha.com/<class>/<subject>/<medium>/<post-slug>
+                // row.slug contains "class/subject/post-slug"
+                // explicit fields class/subject/medium are available from fetchPost
+
+                let externalUrl = '#';
+                if (row.class && row.subject) {
+                    // Extract the leaf slug from the full slug path if needed
+                    const leafSlug = row.slug.split('/').pop() || row.slug;
+                    externalUrl = `https://axomshiksha.com/${row.class}/${row.subject}/${row.medium || 'english'}/${leafSlug}`;
+                } else {
+                    // Fallback using raw slug if metadata is missing
+                    externalUrl = `https://axomshiksha.com/${row.slug}`;
+                }
+
+                return (
+                    <a
+                        href={externalUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: 'none', color: 'inherit', fontWeight: 500 }}
+                    >
+                        {params.value}
+                    </a>
+                );
+            }
         },
         {
             field: 'author',
             headerName: 'Author',
-            flex: 0.5,
+            width: 200,
             renderCell: (params: GridRenderCellParams) => (
                 <Chip
                     avatar={<Avatar>{params.value ? params.value[0]?.toUpperCase() : '?'}</Avatar>}
@@ -120,11 +143,11 @@ export default function AdminDashboard() {
                 />
             )
         },
-        { field: 'category', headerName: 'Category', flex: 0.5 },
+        { field: 'category', headerName: 'Category', width: 150 },
         {
             field: 'status',
             headerName: 'Status',
-            flex: 0.3,
+            width: 120,
             renderCell: (params: GridRenderCellParams) => (
                 <Chip
                     label={params.value}
@@ -133,17 +156,28 @@ export default function AdminDashboard() {
                 />
             )
         },
-        { field: 'date', headerName: 'Date', flex: 0.5 },
+        { field: 'date', headerName: 'Date', width: 220 },
         {
             field: 'actions',
             headerName: 'Actions',
-            flex: 0.2,
+            width: 100,
+            sortable: false,
+            filterable: false,
+            align: 'center',
+            headerAlign: 'center',
             renderCell: (params: GridRenderCellParams) => (
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    justifyContent="center"
+                    sx={{ height: '100%', width: '100%' }}
+                >
                     <IconButton
                         component={Link}
                         href={`/posts/edit/${params.row.slug}`}
                         size="small"
+                        title="Edit"
                     >
                         <Edit size={16} />
                     </IconButton>
@@ -154,6 +188,7 @@ export default function AdminDashboard() {
                             e.stopPropagation();
                             handleDeleteClick(params.row.slug, params.row.title);
                         }}
+                        title="Delete"
                     >
                         <Trash size={16} />
                     </IconButton>

@@ -116,17 +116,12 @@ const EditPostPage = () => {
                 const postData = await fetchPostBySlug(slugValue);
 
                 if (postData) {
-                    // Extract leaf slug from full path if needed, but for editing we might default to filename?
-                    // User wants "slug" field to be editable.
-                    // If post is "class-6/english/lesson-1", slug field should probably show "lesson-1".
-
                     let leafSlug = postData.slug;
                     if (leafSlug.includes('/')) {
                         const parts = leafSlug.split('/');
-                        leafSlug = parts[parts.length - 1]; // "lesson-1"
+                        leafSlug = parts[parts.length - 1];
                     }
 
-                    // Normalize Subject
                     let normalizedSubject = postData.subject || '';
                     if (normalizedSubject && Object.keys(subjectsMap).length > 0) {
                         const match = Object.keys(subjectsMap).find(key =>
@@ -135,7 +130,6 @@ const EditPostPage = () => {
                         if (match) normalizedSubject = match;
                     }
 
-                    // Normalize Category
                     let normalizedCategory = postData.category || '';
                     if (normalizedCategory && Object.keys(taxonomy).length > 0) {
                         const taxKeys = Object.keys(taxonomy);
@@ -146,12 +140,11 @@ const EditPostPage = () => {
                         if (match) normalizedCategory = match;
                     }
 
-                    // Normalize Medium
                     const normalizedMedium = postData.medium || '';
 
                     const formData: FormData = {
                         title: postData.title,
-                        slug: leafSlug, // Show only the name part
+                        slug: leafSlug,
                         description: postData.description,
 
                         category: normalizedCategory,
@@ -179,23 +172,9 @@ const EditPostPage = () => {
         }
     }, [slugParams, reset, taxonomy, subjectsMap]);
 
-    // Cascading Logic: Reset downstream fields (Only if user interacts, but we need to be careful not to wipe initial data on first load)
-    // We can use a ref to track if initial load is done? Or just rely on useEffect dependencies.
-    // Issue: When reset(formData) runs, it sets values. This triggers existing watchers?
-    // Actually, react-hook-form's reset doesn't trigger watchers in a way that causes infinite loops usually, but our side-effect useEffects might.
-
-    // We need to avoid resetting if the change came from 'reset' (initial load).
-    // Simple check: if initialData is matched, maybe don't wipe? 
-    // Better: Only wipe if the Value changed AND it's not the initial set.
-
-    // For now, let's keep it simple but careful.
-
-    // Fetch Syllabus when Class/Subject changes
     useEffect(() => {
         if (selectedClass && selectedSubject && selectedCategory) {
-            // Only fetch if meaningful
             if (initialData && selectedClass === initialData.class && selectedSubject === initialData.subject && !syllabus) {
-                // Initial load phase, fetch syllabus but don't wipe chapter
             }
 
             setLoadingSyllabus(true);
