@@ -53,31 +53,10 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
     const owner = process.env.GITHUB_OWNER!;
     const repo = process.env.GITHUB_REPO!;
 
-    // To find a file by slug, we might need to search if we don't know the author suffix or path
-    // Ideally, the slug passed here should be unique enough or we iterate.
-    // Given the new requirement <post-authorHandle.md>, the slug passed to this function 
-    // might be just 'my-post', so we need to find 'my-post-author.md'.
-
-    // Efficiently, we should list files. Since we need to support deep paths, we use recursive tree.
     const files = await fetchAllMarkdownFiles(octokit, owner, repo);
 
-    // Find file where name starts with slug + '-'
-    // Note: This matches "slug-author.md" for slug "slug"
-    // CAUTION: If we have "slug-one-author.md", it assumes slug is "slug-one".
-    // We need to be careful. The slug passed in might be the CLEAN slug from the URL.
-
     const matchingFile = files.find((file: any) => {
-      // Remove content/ prefix and .md extension to compare with slug
-      // The slug passed in is now "path/to/file-without-author"
-      // file.path is "content/path/to/file-with-author.md"
-
       const filePath = file.path.replace('content/', '').replace('.md', '');
-
-      // If the file path literally contains the slug and ends with a suffix (author)
-      // We need to match precise logic.
-      // New Slug: "class-6/english/lesson-1"
-      // File Path: "class-6/english/lesson-1-author"
-
       const isMatch = filePath.startsWith(slug) && (
         filePath.length === slug.length ||
         filePath.charAt(slug.length) === '-'
@@ -109,11 +88,6 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
     const fileName = parts[parts.length - 1];
     const fileNameWithoutExt = fileName.replace('.md', '');
 
-    // We need to extract author from the filename regardless of the directory in slug
-    // fileNameWithoutExt is "lesson-1-author"
-    // We can just take the last part after hyphen? 
-    // BUT what if slug itself has hyphens? "lesson-1"
-
     const lastHyphenIndex = fileNameWithoutExt.lastIndexOf('-');
     let authorHandle = '';
     if (lastHyphenIndex !== -1) {
@@ -144,10 +118,7 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
     let subjectSlug = '';
     let mediumSlug = '';
 
-    // Basic Heuristic: If we have at least 2 dirs, 1st is likely class, 2nd likely subject
     if (pathParts.length >= 2) {
-      // e.g. class-6/english/file.md -> class=class-6, subject=english
-      // or class-6/english/assamese-medium/file.md -> class=class-6, subject=english, medium=assamese
       classSlug = pathParts[0];
 
       // Check if 2nd part is subject
@@ -180,9 +151,7 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
 }
 
 // Helper function to parse frontmatter from markdown content
-function parseFrontmatter(content: string) {
-  // Regular expression to match TOML frontmatter (Hugo format)
-  // Matches content between +++ and +++
+export function parseFrontmatter(content: string) {
   const frontmatterRegex = /^\+{3}\n([\s\S]*?)\n\+{3}\n?([\s\S]*)/;
   const match = content.match(frontmatterRegex);
 
@@ -204,8 +173,6 @@ function parseFrontmatter(content: string) {
       // Check for section header [section]
       if (line.startsWith('[') && line.endsWith(']')) {
         const sectionName = line.substring(1, line.length - 1).trim();
-        // Handle array of tables e.g. [[menu.main]] - simplified: just ignore or treat as unique key if needed
-        // For this use case, we only need basic [params] support
         if (sectionName) {
           currentSection = sectionName;
           if (!frontmatter[currentSection]) {
@@ -260,7 +227,6 @@ function parseFrontmatter(content: string) {
           value = Number(valueStr);
         }
 
-        // Assign to current section or root
         if (currentSection && frontmatter[currentSection]) {
           frontmatter[currentSection][key] = value;
         } else {
@@ -302,11 +268,8 @@ export async function getAllPosts(filterByCurrentUser: boolean = false): Promise
 
     // Filter and process files
     for (const file of allMarkdownFiles) {
-      // New Logic: Slug includes directory structure relative to content/
-      // file.path = "content/class-6/english/lesson-1-author.md"
 
       const relativePath = file.path.replace('content/', '').replace('.md', '');
-      // relativePath = "class-6/english/lesson-1-author"
 
       const lastHyphenIndex = relativePath.lastIndexOf('-');
 
@@ -325,8 +288,6 @@ export async function getAllPosts(filterByCurrentUser: boolean = false): Promise
         }
       }
 
-      // Fetch content (optimization: parallelize this?)
-      // For now, doing it sequentially to be safe with rate limits, or we could Promise.all batches
       const { data } = await octokit.rest.repos.getContent({
         owner,
         repo,

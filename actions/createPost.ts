@@ -1,6 +1,7 @@
 'use server';
 
 import { saveFileContent, getAuthenticatedUser, getFileContent } from './cms/fileSystem';
+import { parseFrontmatter } from './fetchPost';
 
 // Helper: Slugify string
 function slugify(text: string) {
@@ -23,13 +24,13 @@ async function ensureIndexFile(folderPath: string, title: string, dateString: st
   try {
     const existing = await getFileContent(indexPath);
     if (!existing) {
-      const content = `+++
-title = "${title}"
-draft = false
-date = "${dateString}"
-+++
+      const content = `---
+title: "${title}"
+draft: false
+date: "${dateString}"
+---
 `;
-      // We don't want to fail the whole request if this fails, so catching inside
+
       await saveFileContent(indexPath, content, `Create index for ${title}`);
     }
   } catch (err) {
@@ -73,10 +74,6 @@ export async function createPost(formData: FormData) {
     let filePath = '';
 
     if (formData.class && formData.subject) {
-      // Academic Post with Taxonomy: Construct path from Metadata
-      // This allows "moving" the post if class/subject changes
-
-      // Ensure slug is just the filename part if we are using metadata to drive structure
       let fileNameSlug = cleanSlug;
       if (fileNameSlug.includes('/') || fileNameSlug.includes('\\')) {
         const parts = fileNameSlug.split(/[/\\]/);
@@ -85,15 +82,12 @@ export async function createPost(formData: FormData) {
 
       fileName = `${fileNameSlug}-${username}.md`;
 
-      // Slugify Class and Subject
       const classSlug = slugify(formData.class);
       const subjectSlug = slugify(formData.subject);
 
-      // Ensure directory indices exist
       await ensureIndexFile(`content/${classSlug}`, unslugify(classSlug), dateString);
       await ensureIndexFile(`content/${classSlug}/${subjectSlug}`, unslugify(subjectSlug), dateString);
 
-      // Construct Path
       let folderPath = `content/${classSlug}/${subjectSlug}`;
 
       if (formData.medium && formData.medium !== 'english') {
@@ -104,7 +98,6 @@ export async function createPost(formData: FormData) {
       filePath = `${folderPath}/${fileName}`;
 
     } else if (hasPath) {
-      // Manual Path Override (Legacy or advanced use)
       const normalized = cleanSlug.replace(/\\/g, '/');
       const lastSlash = normalized.lastIndexOf('/');
       const dir = normalized.substring(0, lastSlash);
@@ -113,7 +106,6 @@ export async function createPost(formData: FormData) {
       fileName = `${name}-${username}.md`;
       filePath = `content/${dir}/${fileName}`;
     } else {
-      // Fallback for generic posts
       fileName = `${cleanSlug}-${username}.md`;
       const folder = formData.category ? formData.category.toLowerCase().replace(/\s+/g, '-') : 'posts';
       filePath = `content/${folder}/${fileName}`;
@@ -126,36 +118,28 @@ export async function createPost(formData: FormData) {
     const keywordsString = JSON.stringify(keywords);
     const categoriesString = JSON.stringify([formData.category]);
 
-    let frontmatter = `+++
-title = "${formData.title}"
-draft = ${!formData.published}
-date = "${dateString}"
-readingTime = "${formData.readingTime} mins"
-description = "${formData.description}"
-keywords = ${keywordsString}
-categories = ${categoriesString}
-thumbnail = "${formData.thumbnail}"
-slug = "${cleanSlug}"
+    let frontmatter = `---
+title: "${formData.title}"
+draft: ${!formData.published}
+date: "${dateString}"
+lastmod: "${dateString}"
+readingTime: "${formData.readingTime} mins"
+description: "${formData.description}"
+keywords: ${keywordsString}
+categories: ${categoriesString}
+thumbnail: "${formData.thumbnail}"
+slug: "${cleanSlug}"
+author: "${username}"
 `;
 
     // Add params section only if we have relevant data
     if (formData.chapter_title || formData.medium) {
-      frontmatter += `
-[params]
-  author = "${username}"
-`;
-      if (formData.chapter_title) frontmatter += `  chapter_title = "${formData.chapter_title}"\n`;
-      if (formData.medium) frontmatter += `  medium = "${formData.medium}"\n`;
-    } else {
-      // Just author for generic posts if no other params
-      frontmatter += `
-[params]
-  author = "${username}"
-`;
+      if (formData.chapter_title) frontmatter += `chapter_title: "${formData.chapter_title}"\n`;
+      if (formData.medium) frontmatter += `medium: "${formData.medium}"\n`;
     }
 
-    frontmatter += `+++
-`;
+    // Close frontmatter
+    frontmatter += '---\n';
 
     const fileContent = frontmatter + formData.content;
 
