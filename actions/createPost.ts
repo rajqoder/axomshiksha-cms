@@ -1,7 +1,7 @@
 'use server';
 
 import { saveFileContent, getAuthenticatedUser, getFileContent } from './cms/fileSystem';
-import { parseFrontmatter } from './fetchPost';
+import { parseFrontmatter } from '@/lib/utils';
 
 // Helper: Slugify string
 function slugify(text: string) {
@@ -65,7 +65,10 @@ export async function createPost(formData: FormData) {
 
     // Date Format
     const currentDate = new Date();
-    const dateString = currentDate.toISOString().split(".")[0] + "+05:30";
+    // Default date (will be overwritten if file exists and has date)
+    let dateString = currentDate.toISOString().split(".")[0] + "+05:30";
+    // Always update lastmod to now
+    const lastmodString = dateString;
 
     // Check if slug contains directory path (e.g. from editing an existing deep file)
     const hasPath = cleanSlug.includes('/') || cleanSlug.includes('\\');
@@ -111,6 +114,20 @@ export async function createPost(formData: FormData) {
       filePath = `content/${folder}/${fileName}`;
     }
 
+    // Check if file exists to preserve creation date
+    try {
+      const existingContent = await getFileContent(filePath);
+      if (existingContent && typeof existingContent === 'string') {
+        const { frontmatter } = parseFrontmatter(existingContent);
+        if (frontmatter.date) {
+          dateString = frontmatter.date;
+        }
+      }
+    } catch (e) {
+      // Ignore error if file doesn't exist or can't be read
+      console.log('New file or could not read existing file for date preservation');
+    }
+
     // Determine keywords
     const keywords = formData.keywords || [];
 
@@ -122,7 +139,7 @@ export async function createPost(formData: FormData) {
 title: "${formData.title}"
 draft: ${!formData.published}
 date: "${dateString}"
-lastmod: "${dateString}"
+lastmod: "${lastmodString}"
 readingTime: "${formData.readingTime} mins"
 description: "${formData.description}"
 keywords: ${keywordsString}

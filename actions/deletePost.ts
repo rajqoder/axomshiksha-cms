@@ -2,12 +2,13 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { Octokit } from 'octokit';
+import { parseFrontmatter } from '@/lib/utils';
 
 export async function deletePost(slug: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  if(!user || !user.email) return { success: false, message: 'User not authenticated or email not available' };
+  if (!user || !user.email) return { success: false, message: 'User not authenticated or email not available' };
 
   // Get the user's email username for verification
   const userEmailUsername = user.email.split('@')[0];
@@ -58,53 +59,3 @@ export async function deletePost(slug: string) {
   }
 }
 
-// Helper function to parse frontmatter from markdown content
-function parseFrontmatter(content: string) {
-  // Regular expression to match TOML frontmatter (Hugo format)
-  const frontmatterRegex = /^\+{3}\n([\s\S]*?)\n\+{3}\n?([\s\S]*)/;
-  const match = content.match(frontmatterRegex);
-
-  if (match) {
-    const frontmatterStr = match[1];
-    const contentStr = match[2] || '';
-
-    // Parse TOML frontmatter manually
-    const frontmatter: Record<string, any> = {};
-    
-    // Split by newlines and parse key-value pairs
-    const lines = frontmatterStr.split('\n');
-    for (const line of lines) {
-      const colonIndex = line.indexOf('=');
-      if (colonIndex > 0) {
-        const key = line.substring(0, colonIndex).trim();
-        let value: any = line.substring(colonIndex + 1).trim();
-        
-        // Remove quotes and handle arrays
-        if (value.startsWith('"') && value.endsWith('"')) {
-          value = value.substring(1, value.length - 1);
-        } else if (value.startsWith('[') && value.endsWith(']')) {
-          // Parse array format: ["tag1", "tag2"]
-          const arrayContent = value.substring(1, value.length - 1);
-          value = arrayContent
-            .split(',')
-            .map((item: string) => item.trim().replace(/"/g, ''))
-            .filter((item: string) => item.length > 0);
-        } else if (value === 'true') {
-          value = true;
-        } else if (value === 'false') {
-          value = false;
-        } else if (!isNaN(Number(value))) {
-          // Convert numeric strings to numbers
-          value = Number(value);
-        }
-        
-        frontmatter[key] = value;
-      }
-    }
-
-    return { frontmatter, content: contentStr };
-  }
-
-  // If no frontmatter found, return content as is
-  return { frontmatter: {}, content };
-}

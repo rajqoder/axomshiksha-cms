@@ -1,22 +1,22 @@
 'use server';
 
 import { Octokit } from 'octokit';
-import { createClient } from '@/lib/supabase/server'; // Import the server-side Supabase client
+import { createClient } from '@/lib/supabase/server';
+import { parseFrontmatter } from '@/lib/utils';
 
 interface PostData {
   title: string;
   slug: string;
   description: string;
-  category: string; // Single category as a string
+  category: string;
   content: string;
   published: boolean;
-  readingTime: number | string; // Can be number or string depending on parsing
+  readingTime: number | string;
   thumbnail: string;
-  keywords: string[] | string; // Can be string or array depending on parsing
+  keywords: string[] | string;
   date: string;
   status: string;
   author: string;
-  // Extended Metadata
   class?: string;
   subject?: string;
   medium?: string;
@@ -39,7 +39,6 @@ async function fetchAllMarkdownFiles(octokit: Octokit, owner: string, repo: stri
     item.path.startsWith('content/') &&
     item.path.endsWith('.md') &&
     !item.path.endsWith('_index.md') &&
-    // Exclude root-level files (e.g. content/about.md) by ensuring path has subdirectories
     item.path.split('/').length > 2
   );
 }
@@ -150,97 +149,6 @@ export async function fetchPostBySlug(slug: string): Promise<PostData | null> {
   }
 }
 
-// Helper function to parse frontmatter from markdown content
-export function parseFrontmatter(content: string) {
-  const frontmatterRegex = /^\+{3}\n([\s\S]*?)\n\+{3}\n?([\s\S]*)/;
-  const match = content.match(frontmatterRegex);
-
-  if (match) {
-    const frontmatterStr = match[1];
-    const contentStr = match[2] || '';
-
-    // Parse TOML frontmatter manually
-    const frontmatter: Record<string, any> = {};
-    let currentSection: string | null = null;
-
-    // Split by newlines
-    const lines = frontmatterStr.split('\n');
-
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line || line.startsWith('#')) continue;
-
-      // Check for section header [section]
-      if (line.startsWith('[') && line.endsWith(']')) {
-        const sectionName = line.substring(1, line.length - 1).trim();
-        if (sectionName) {
-          currentSection = sectionName;
-          if (!frontmatter[currentSection]) {
-            frontmatter[currentSection] = {};
-          }
-        }
-        continue;
-      }
-
-      const equalIndex = line.indexOf('=');
-      if (equalIndex > 0) {
-        const key = line.substring(0, equalIndex).trim();
-        let valueStr = line.substring(equalIndex + 1).trim();
-        let value: any = valueStr;
-
-        // Handle multi-line arrays
-        if (valueStr.startsWith('[') && !valueStr.endsWith(']')) {
-          // Read ahead until we find the closing bracket
-          let accumulated = valueStr;
-          let nextIdx = i + 1;
-          while (nextIdx < lines.length) {
-            const nextLine = lines[nextIdx].trim();
-            if (!nextLine || nextLine.startsWith('#')) {
-              nextIdx++;
-              continue;
-            }
-            accumulated += " " + nextLine;
-            i = nextIdx; // Advance outer loop
-            if (nextLine.endsWith(']')) break;
-            nextIdx++;
-          }
-          valueStr = accumulated;
-        }
-
-        // Value Parsing
-        if (valueStr.startsWith('"') && valueStr.endsWith('"')) {
-          value = valueStr.substring(1, valueStr.length - 1);
-        } else if (valueStr.startsWith("'") && valueStr.endsWith("'")) {
-          value = valueStr.substring(1, valueStr.length - 1);
-        } else if (valueStr.startsWith('[') && valueStr.endsWith(']')) {
-          // Parse array format: ["tag1", "tag2"]
-          const arrayContent = valueStr.substring(1, valueStr.length - 1);
-          value = arrayContent
-            .split(',')
-            .map((item: string) => item.trim().replace(/^["']|["']$/g, ''))
-            .filter((item: string) => item.length > 0);
-        } else if (valueStr === 'true') {
-          value = true;
-        } else if (valueStr === 'false') {
-          value = false;
-        } else if (!isNaN(Number(valueStr))) {
-          value = Number(valueStr);
-        }
-
-        if (currentSection && frontmatter[currentSection]) {
-          frontmatter[currentSection][key] = value;
-        } else {
-          frontmatter[key] = value;
-        }
-      }
-    }
-
-    return { frontmatter, content: contentStr };
-  }
-
-  // If no frontmatter found, return content as is
-  return { frontmatter: {}, content };
-}
 
 
 
